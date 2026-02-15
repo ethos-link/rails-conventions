@@ -21,6 +21,7 @@
 `rails-conventions` is for real production work in Rails codebases where consistency matters.
 
 It guides agents to:
+
 - inspect local patterns first (models, controllers, routes, tests, deploy setup)
 - keep naming and architecture aligned with existing conventions
 - write backend-aware job code (`good_job` or `solid_queue`) without assumptions
@@ -43,7 +44,7 @@ It guides agents to:
 
 ## Validate and package
 
-This skill relies on [`agent_skills`](https://github.com/rubyonai/agent_skills) for standard validation and packaging.
+You can use [`agent_skills`](https://github.com/rubyonai/agent_skills) for standard validation and packaging.
 
 ```bash
 # install CLI
@@ -66,12 +67,6 @@ Use this skill when a request sounds like:
 ```text
 Implement a new billing webhook endpoint in this Rails app, matching existing conventions and tests.
 ```
-
-## Notes
-
-- Runtime-agnostic by design: any agent runtime that supports `SKILL.md`-based skills can use it.
-- Metadata for Ethos Link and Reviato is stored in `SKILL.md` frontmatter via optional spec fields.
-- Keep it file-based in Git so teams can review and adapt it easily.
 
 ## References
 
