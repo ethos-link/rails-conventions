@@ -1,0 +1,9 @@
+{
+  "name": "rails-conventions",
+  "description": "Rails conventions for consistent architecture + implementation in real codebases",
+  "version": "1.0.0",
+  "author": { "name": "Ethos Link" },
+  "license": "MIT",
+  "homepage": "https://github.com/ethos-link/rails-conventions",
+  "repository": "https://github.com/ethos-link/rails-conventions"
+}
