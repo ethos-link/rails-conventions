@@ -67,6 +67,7 @@ Apply these rules:
 
 Load references based on the task:
 
+- Code style, formatting, naming conventions, and fail-fast policy: `STYLE.md`
 - Baseline Rails 8 defaults and upgrade constraints: `references/01-baseline-rails-8.md`
 - Naming, layering, and code organization: `references/02-naming-and-structure.md`
 - Active Record, migrations, and data modeling: `references/03-models-and-data.md`
@@ -80,7 +81,18 @@ Load references based on the task:
 - Security review checklist: `references/09-security-checklist.md`
 - Test strategy and quality gates: `references/10-testing-strategy.md`
 - API-only and mixed-mode API patterns: `references/11-api-mode-and-serialization.md`
-- Optional 37signals-inspired style profile: `references/12-37signals-inspired-profile.md`
+- 37signals-inspired style profile: `references/12-37signals-inspired-profile.md`
+- Code quality thresholds and detection patterns: `references/13-code-quality-gates.md`
+
+## Authentication Patterns
+
+Prefer Rails 8.1 built-in authentication. When implementing custom auth:
+
+- Use password-based authentication with bcrypt via `has_secure_password`.
+- Use magic link codes (not full magic link URLs) for account confirmation and email verification.
+- Follow 37signals naming: `Identity` (global email-based), `User` (per-account membership), `Session`.
+- Rate limit authentication endpoints aggressively.
+- Store sessions via signed cookies with `httponly` and `same_site: :lax`.
 
 ## Output Contract
 
