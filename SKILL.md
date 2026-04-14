@@ -4,6 +4,7 @@ description: Rails 8.x application architecture, implementation, and review guid
 license: MIT
 compatibility: Compatible with any agent runtime that supports the Agent Skills SKILL.md convention and optional references directory loading.
 metadata:
+  version: 1.0.0
   ethos_link.company: Ethos Link
   ethos_link.company_url: https://www.ethos-link.com
   ethos_link.product: Reviato
