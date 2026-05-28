@@ -2,24 +2,40 @@
 
 ## Query Performance
 
-- Eliminate N+1 queries.
+- Eliminate N+1 queries with `includes`, `preload`, or explicit joins based on
+  the query shape.
 - Add or refine indexes for real query paths.
 - Use relation composition over ad hoc SQL when possible.
-- Use explicit SQL only when measured performance requires it.
+- Use explicit SQL only when measured performance or database features require
+  it.
+- Use SQL aggregation (`count`, `sum`, `minimum`, `maximum`) instead of loading
+  collections into Ruby.
+- Use `find_each` or `in_batches` for large collections.
+- Avoid unbounded lists in controllers, APIs, and views. Paginate or cap result
+  sets.
+- Check query plans for risky indexes, joins, reports, and high-volume paths.
 
-## Caching Strategy
+## Caching
 
-- Apply caching at the right layer: HTTP, fragment, computed data.
-- Keep cache keys and invalidation rules explicit.
-- Avoid user-specific cache leaks.
+- Give each cached value one owner and one invalidation path.
+- Prefer Rails cache keys and `touch: true` association chains for fragment
+  invalidation.
+- Do not memoize Active Record relations across request, tenant, or user
+  boundaries.
+- Cache derived/read-model data only when its source of truth and invalidation
+  path are explicit.
+- Do not HTTP-cache pages that contain CSRF-protected forms.
 
-## Background Throughput
+## Data Over Ruby
 
-- Offload expensive operations to jobs.
-- Bound batch sizes and memory usage.
-- Measure queue latency and failure rates.
+Do in SQL what SQL does best: filtering, joining, grouping, ordering, and
+aggregating. Load records into Ruby when object behavior, callbacks, or view
+presentation requires objects.
 
-## Deployment Considerations
+## Measurement
 
-- Tune Puma and DB pools together.
-- Verify production-like performance before broad rollout.
+- Prefer a measured fix over speculative indexing or caching.
+- For user-facing slow paths, capture before/after query counts, response time,
+  or job runtime.
+- Do not add caching to hide missing indexes, N+1 queries, or inefficient data
+  ownership.

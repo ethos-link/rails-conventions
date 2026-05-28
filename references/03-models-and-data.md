@@ -112,6 +112,10 @@ class Card < ApplicationRecord
 end
 ```
 
+Use a boolean for intrinsic, low-value state with no actor, timestamp, reason,
+history, or audit value. Use a state record when actor, timestamp, reason,
+reversibility, audit, or workflow history matters.
+
 ### Query Patterns With State Records
 
 ```ruby
@@ -120,6 +124,25 @@ Card.closed                  # joins(:closure)
 Card.active                  # open.published.where.missing(:not_now)
 Card.postponed               # open.published.joins(:not_now)
 ```
+
+## Reliable Data Handling
+
+Design writes to be atomic, idempotent where retried, and backed by database
+constraints. Keep invariants close to the data: `NOT NULL`, foreign keys,
+unique indexes, and check constraints.
+
+Use transactions around multi-record state changes. Use row locks, unique
+constraints, or both for concurrency-sensitive writes. Do not rely on
+application-only checks for invariants that must hold under concurrent requests
+or background jobs.
+
+Separate canonical persisted data from derived data. If a value can be
+recomputed and exists for read performance, document its owner and invalidation
+path.
+
+For background jobs, pass stable identifiers and make retry behavior safe. A
+retried job should not duplicate state transitions, charges, emails, or external
+side effects unless the domain explicitly allows it.
 
 ## POROs
 
@@ -209,7 +232,12 @@ scope :by_title_asc, -> { ... }
 ## Migration Rules
 
 - Add indexes for foreign keys, lookup columns, and common query patterns.
-- Use foreign keys for referential integrity where appropriate.
+- Use foreign keys for referential integrity unless the app has a documented
+  reason not to.
+- Add database constraints for critical invariants. Model validations improve
+  error messages; they do not replace database integrity.
+- Keep PostgreSQL enum migrations explicit. Adding enum values is supported,
+  but removing values is not simple or reversible.
 - Backfill data safely in batches for large tables.
 - Keep migrations additive and reversible where practical.
 
@@ -297,6 +325,9 @@ User.where(active: true).find_each { |u| u.update!(verified: true) }
 - Use `find_each` not `each` for large collections.
 - Use counter caches instead of manual counting.
 
+For PostgreSQL-specific datatypes, indexes, constraints, and views, load
+`references/03a-active-record-postgresql.md`.
+
 ## Write-Time Over Read-Time
 
 Pre-compute data at write time when it reduces expensive reads:
@@ -304,3 +335,12 @@ Pre-compute data at write time when it reduces expensive reads:
 - Use counter caches instead of manual counting.
 - Pre-compute roll-ups when saving, not when presenting.
 - Use `touch: true` on associations for cache invalidation chains.
+
+## Provider Parsing Contract
+
+- Provider parsers must only map fields present in the source payload or HTML;
+  do not invent fallback values during parsing.
+- Do not set model defaults in parsers or import normalizers. Defaults belong on
+  the persisted models or their write path.
+- If stored/raw provider payloads are partial, normalize the payload shape in the
+  orchestrator before calling the provider parser.

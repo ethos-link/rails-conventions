@@ -14,8 +14,12 @@ If backend is unclear, ask before implementing backend-specific behavior. Do not
 
 - Keep jobs idempotent.
 - Keep arguments serializable and stable.
+- Prefer stable scalar IDs when deleted records, tenant boundaries, or retries
+  make GlobalID deserialization risky.
 - Keep retries intentional and bounded.
 - Keep transactions and enqueue timing safe.
+- A retry must not duplicate charges, emails, state transitions, or external
+  writes unless the domain explicitly allows it.
 
 ## `_later` and `_now` Convention
 
@@ -153,6 +157,9 @@ module SmtpDeliveryErrorHandling
 end
 ```
 
+Keep retry windows bounded and visible in logs or error reporting. Do not retry
+validation failures or permanent provider rejections.
+
 ### Permanent Failures — Swallow Gracefully
 
 Do not fail the job for unrecoverable errors. Log at info level:
@@ -182,6 +189,11 @@ Set `enqueue_after_transaction_commit` to prevent jobs from running before data 
 # In initializer
 ActiveJob::Base.enqueue_after_transaction_commit = true
 ```
+
+When enqueueing is part of a state transition, the state write and enqueue
+decision must be transaction-safe. Prefer `after_commit`, Rails transactional
+enqueueing, or an explicit outbox-style persisted event over callbacks that can
+fire before rollback.
 
 ## Stagger Recurring Jobs
 

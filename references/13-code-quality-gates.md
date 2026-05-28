@@ -1,6 +1,7 @@
 # Code Quality Gates
 
-Use these thresholds to keep generated code within healthy bounds. Apply during code review and as a self-check before finalizing changes.
+Use these thresholds as review signals, not mechanical extraction rules. Apply
+them during code review and as a self-check before finalizing changes.
 
 ## Class Size
 
@@ -8,7 +9,7 @@ Use these thresholds to keep generated code within healthy bounds. Apply during 
 |--------|-------|---------------------|
 | Lines | < 200 | Extract concerns, POROs, or sub-classes |
 | Public methods | < 15 | Split responsibilities into separate classes |
-| Private methods | < 7 | Extract private logic into a PORO |
+| Private methods | < 7 | Simplify first; extract only when the new object has a stable responsibility |
 | Responsibilities | 1 | If you cannot describe the class in one sentence, it has too many responsibilities |
 
 ## Method Size
@@ -54,7 +55,7 @@ private
 
 | Metric | Limit | Action When Exceeded |
 |--------|-------|---------------------|
-| Method arguments | < 3 | Extract parameter object or use keyword arguments with defaults |
+| Method arguments | < 3 | Prefer keyword arguments or an existing domain object |
 
 ```ruby
 # Bad — too many positional args
@@ -67,11 +68,16 @@ def completion_notification(email:, first_name:, last_name: nil, phone: nil, com
   # ...
 end
 
-# Also good — parameter object
-def completion_notification(notification_params)
+# Also good — existing domain object
+def completion_notification(notification)
   # ...
 end
 ```
+
+Prefer keyword arguments for Ruby APIs. Pass an existing domain object when one
+already owns the data. Create a value object only when it has behavior,
+validation, or a stable domain name; do not create DTOs merely to group
+arguments.
 
 ## Concern Size
 
@@ -104,9 +110,13 @@ Run through this checklist before completing any implementation task:
 1. Class sizes within limits (< 200 lines, < 15 public methods).
 2. Method sizes within limits (< 10 lines preferred).
 3. No query logic in controllers or views.
-4. Bang methods used in jobs and services.
+4. Bang methods used in jobs and orchestration code.
 5. No 3+ dot chains in views.
 6. No bare `rescue` or `rescue nil`.
 7. Migrations do not reference application models.
 8. External HTTP calls have explicit timeouts.
 9. Tests ship with the feature.
+
+Before extracting, ask whether the new object has a stable name, responsibility,
+and public API. If extraction only hides complexity, simplify the original code
+first.

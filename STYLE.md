@@ -123,6 +123,25 @@ end
 
 ## Naming
 
+## Code Language
+
+Names should be concrete domain nouns or intention-revealing verbs. Public APIs
+should say what the caller is asking the object to do, not how the object is
+implemented.
+
+Comments should explain why, invariants, data contracts, security assumptions,
+or non-obvious Rails behavior. Do not comment what the next line says.
+
+Avoid vague class names such as `Manager`, `Handler`, `Processor`, `Helper`, and
+`Service`. Prefer the domain concept: `Publication`, `Closure`, `Signup`,
+`Subscription`.
+
+Prefer precise verbs over generic verbs. Use `close`, `publish`, `archive`, or
+`charge` instead of `process`, `handle`, `execute`, or `perform` unless Rails
+owns the verb, such as `Job#perform`.
+
+## Predicates
+
 ### Positive Predicates
 
 Prefer positive predicate names over negative ones:
@@ -157,187 +176,15 @@ end
 
 Use `!` only when a non-`!` version exists. Do not use `!` to signal "this raises" or "this is destructive" without a counterpart.
 
-## CRUD Controllers
+## Rails Architecture References
 
-Model web endpoints as CRUD operations on resources (REST). When an action does not map cleanly to a standard CRUD verb, introduce a new resource instead of adding custom actions.
+Keep architecture rules in the topic references:
 
-```ruby
-# Bad
-resources :cards do
-  post :close
-  post :reopen
-end
-
-# Good
-resources :cards do
-  resource :closure      # POST to close, DELETE to reopen
-  resource :goldness     # POST to gild, DELETE to ungild
-end
-```
-
-## Controller And Model Interactions
-
-Favor a vanilla Rails approach: thin controllers directly invoking a rich domain model. Do not use services or other artifacts merely to connect the two.
-
-Invoking plain Active Record operations is fine:
-
-```ruby
-class Cards::CommentsController < ApplicationController
-  def create
-    @comment = @card.comments.create!(comment_params)
-  end
-end
-```
-
-For more complex behavior, prefer clear, intention-revealing model APIs:
-
-```ruby
-class Cards::ClosuresController < ApplicationController
-  def create
-    @card.close
-  end
-end
-```
-
-When justified, POROs, services, or form objects are acceptable, but do not
-treat them as special artifacts:
-
-```ruby
-Signup.new(email_address: email_address).create_identity
-```
-
-## Concerns
-
-### When To Extract
-
-- Extract a concern when the same behavior pattern appears across 3+ models or controllers.
-- Extract a concern for cohesive, related functionality — not to reduce file size.
-- Name concerns for the capability they provide: `Closeable`, `Watchable`, `Assignable`.
-
-### Structure
-
-Each concern should be 50–150 lines and self-contained:
-
-```ruby
-module Card::Closeable
-  extend ActiveSupport::Concern
-
-  included do
-    has_one :closure, dependent: :destroy
-
-    scope :closed, -> { joins(:closure) }
-    scope :open, -> { where.missing(:closure) }
-  end
-
-  def closed?
-    closure.present?
-  end
-
-  def close(user: Current.user)
-    unless closed?
-      transaction do
-        create_closure! user: user
-        track_event :closed, creator: user
-      end
-    end
-  end
-
-  def reopen(user: Current.user)
-    if closed?
-      transaction do
-        closure&.destroy
-        track_event :reopened, creator: user
-      end
-    end
-  end
-end
-```
-
-## POROs
-
-POROs live under model namespaces for related logic that does not need persistence. They are model-adjacent, not controller-adjacent.
-
-```ruby
-# app/models/event/description.rb
-class Event::Description
-  attr_reader :event
-
-  def initialize(event)
-    @event = event
-  end
-
-  def to_s
-    case event.action
-    when "created"  then "#{creator_name} created this card"
-    when "closed"   then "#{creator_name} closed this card"
-    else "#{creator_name} updated this card"
-    end
-  end
-
-  private
-    def creator_name
-      event.creator.name
-    end
-end
-```
-
-Do not use `*Service`, `*Manager`, or `*Handler` suffixes. Use domain nouns.
-
-## Scope Naming
-
-Name scopes for business concepts, not SQL operations:
-
-```ruby
-# Good
-scope :active, -> { where.missing(:pop) }
-scope :unassigned, -> { where.missing(:assignments) }
-
-# Bad
-scope :without_pop, -> { ... }
-scope :no_assignments, -> { ... }
-```
-
-## Job Patterns
-
-### `_later` and `_now` Convention
-
-When a model method enqueues a job that invokes another method on that same class, use `_later` for the async version and `_now` for the synchronous version:
-
-```ruby
-module Event::Relaying
-  extend ActiveSupport::Concern
-
-  included do
-    after_create_commit :relay_later
-  end
-
-  def relay_later
-    Event::RelayJob.perform_later(self)
-  end
-
-  def relay_now
-    # actual work
-  end
-end
-
-class Event::RelayJob < ApplicationJob
-  def perform(event)
-    event.relay_now
-  end
-end
-```
-
-### Shallow Jobs
-
-Jobs should be shallow — they delegate to model methods:
-
-```ruby
-class NotifyRecipientsJob < ApplicationJob
-  def perform(notifiable)
-    notifiable.notify_recipients
-  end
-end
-```
+- Routing and CRUD resources: `references/05-routes-rest-and-resources.md`
+- Controller and model boundaries: `references/04-controllers-and-params.md`
+- Naming, concerns, POROs, and scope names: `references/02-naming-and-structure.md`
+- Models, transactions, and data handling: `references/03-models-and-data.md`
+- Background jobs: `references/07-background-jobs-overview.md`
 
 ## Fail-Fast
 
@@ -347,7 +194,7 @@ end
 - When a call chain is incorrect, update the call chain and underlying data contracts; do not add indirection layers.
 - Do not branch on both symbol and string keys for the same hash. Normalize keys once at the boundary.
 
-### Bang Methods In Jobs And Services
+### Bang Methods In Jobs And Orchestration Code
 
 In jobs and POROs, use bang methods (`save!`, `update!`, `create!`) so failures raise immediately. Silent failures in background jobs are invisible until data is corrupt.
 
@@ -371,20 +218,6 @@ end
 
 In controllers, `save` (without `!`) is acceptable for form validation flows where you re-render on failure. Use `save!` when success is expected and failure is exceptional.
 
-### Bulk Operations In Transactions
-
-Wrap multi-step mutations in transactions. If any step fails, all changes roll back:
-
-```ruby
-def bulk_change_owner(user)
-  transaction do
-    all.find_each do |record|
-      record.update!(owner: user)
-    end
-  end
-end
-```
-
 ## Strict Locals
 
 All component partials must declare their variables on the first line using strict locals. Do not rely on instance variables in shared partials. Do not use `**locals` splat.
@@ -396,9 +229,3 @@ All component partials must declare their variables on the first line using stri
 <p><%= description %></p>
 <%= render "cards/preview", card: card if card %>
 ```
-
-## Provider Parsing Contract
-
-- Provider parsers must only map fields present in the source payload or HTML; do not invent fallback values during parsing.
-- Do not set model defaults in parsers or import normalizers; defaults belong on the persisted models or their write path.
-- If stored/raw provider payloads are partial, normalize the payload shape in the orchestrator before calling the provider parser.

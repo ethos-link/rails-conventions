@@ -2,7 +2,9 @@
 
 ## Minitest Over RSpec
 
-Use Minitest. It ships with Rails, has simpler syntax, faster boot time, and plain Ruby assertions.
+Use Minitest. It ships with Rails, has simpler syntax, faster boot time, and
+plain Ruby assertions. Do not add RSpec, factory gems, or third-party mocking
+libraries unless the app already uses them.
 
 ## Fixtures Over Factories
 
@@ -214,6 +216,26 @@ Tests ship with features in the same commit — not beforehand, not afterward. S
 - Avoid mocks and stubs for core domain behavior. Use them only at external
   boundaries or when the alternative would make the test slow, flaky, or
   unclear.
+
+## Minitest Mocks
+
+Use `Minitest::Mock` when a test double is justified. Set expectations with
+`expect`, exercise the public behavior, and call `verify`.
+
+```ruby
+test "notifies provider" do
+  provider = Minitest::Mock.new
+  provider.expect :deliver, true, [String]
+
+  Notification.new(provider: provider).deliver("Hello")
+
+  provider.verify
+end
+```
+
+Prefer mocks at external boundaries such as provider clients, mail delivery
+adapters, and payment gateways. Do not mock the object under test or its core
+domain collaborators just to avoid designing a clearer public API.
 
 ## Antipatterns To Avoid
 

@@ -31,18 +31,24 @@ It guides agents to:
 
 - Rails 8 baseline and compatibility constraints
 - Naming, layering, and code organization
-- Active Record modeling and migration discipline
+- Active Record modeling, PostgreSQL features, and migration discipline
 - Controllers, params, and response semantics
 - REST/resource-focused routing
 - Hotwire/Turbo/Stimulus patterns
 - Background jobs (adapter detection + backend-specific guidance)
 - Performance and caching strategy
 - Security checklist
-- Testing strategy (Minitest/RSpec alignment)
+- Testing strategy (Minitest and Minitest::Mock)
 - API and serialization conventions
 - Optional 37signals-inspired profile
 
 ## Validate and package
+
+Run the bundled validation script first:
+
+```bash
+ruby scripts/validate_skill.rb
+```
 
 You can use [`agent_skills`](https://github.com/rubyonai/agent_skills) for standard validation and packaging.
 

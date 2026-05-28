@@ -123,6 +123,14 @@ job, mailer, route, or view behavior. A new abstraction is justified only when
 it removes real duplication, owns a clear domain concept, or coordinates a
 cross-domain workflow that does not naturally belong to one model.
 
+Before adding a class, name its responsibility in one sentence. If the class
+only forwards calls, renames another object, groups parameters without behavior,
+or exists to make a test easier, do not add it.
+
+Prefer model methods for local behavior. Prefer model-namespaced POROs for
+cohesive operations that do not fit one Active Record object. Use services only
+for true cross-domain orchestration with a stable public API.
+
 ### Concerns: When And How
 
 Extract a concern when:

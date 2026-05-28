@@ -1,0 +1,10 @@
+name: rails-conventions
+title: Rails Conventions
+description: Rails 8 architecture, implementation, review, security, testing, and production-readiness guidance.
+tags:
+  - rails
+  - ruby
+  - active-record
+  - hotwire
+  - testing
+  - security
