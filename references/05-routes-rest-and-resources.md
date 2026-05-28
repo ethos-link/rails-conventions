@@ -24,6 +24,10 @@ end
 
 **Why**: Standard REST verbs map cleanly to controller actions. No guessing what HTTP method to use.
 
+Custom routes are acceptable for non-resourceful endpoints, health checks,
+provider callbacks, webhooks, protocol endpoints, and mounted Rack apps. Do not
+force fake resources for infrastructure endpoints.
+
 ## Noun-Based Resources
 
 Turn verbs into nouns:

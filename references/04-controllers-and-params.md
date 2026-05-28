@@ -37,7 +37,8 @@ end
 
 ## Params Handling
 
-Use `params.expect` (Rails 7.1+) over `params.require`/`permit` chains. Returns 400 instead of 500 for bad params:
+Use `params.expect` (Rails 7.1+) for required structured params. It returns
+`400 Bad Request` for missing or invalid required params:
 
 ```ruby
 # Before
@@ -48,6 +49,8 @@ params.expect(user: [:name, :email])
 ```
 
 Keep permit/expect declarations local and explicit.
+Use `permit` only when maintaining older Rails apps or established local style.
+Do not mass-assign raw `params`.
 
 ## Authorization Pattern
 
@@ -184,6 +187,7 @@ end
 - Use `unprocessable_entity` for validation failures.
 - Keep response branches explicit for `html`, `turbo_stream`, and `json`.
 - Prefer `turbo_stream.replace` with `method: :morph` over redirects for in-place updates.
+- Use i18n for user-facing strings when the host app does.
 
 ```ruby
 def create

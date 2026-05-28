@@ -31,18 +31,24 @@ It guides agents to:
 
 - Rails 8 baseline and compatibility constraints
 - Naming, layering, and code organization
-- Active Record modeling and migration discipline
+- Active Record modeling, PostgreSQL features, and migration discipline
 - Controllers, params, and response semantics
 - REST/resource-focused routing
 - Hotwire/Turbo/Stimulus patterns
 - Background jobs (adapter detection + backend-specific guidance)
 - Performance and caching strategy
 - Security checklist
-- Testing strategy (Minitest/RSpec alignment)
+- Testing strategy (Minitest and Minitest::Mock)
 - API and serialization conventions
 - Optional 37signals-inspired profile
 
 ## Validate and package
+
+Run the bundled validation script first:
+
+```bash
+ruby scripts/validate_skill.rb
+```
 
 You can use [`agent_skills`](https://github.com/rubyonai/agent_skills) for standard validation and packaging.
 
@@ -80,7 +86,7 @@ MIT.
 
 ## About
 
-Made by the team at [Ethos Link](https://www.ethos-link.com) — practical software for growing businesses. We build tools for hospitality and retail teams who don’t have time for complicated setups: plain-language insights, fast onboarding, and real human support so you can get clear insights, take action, and move on.
+Made by the team at [Ethos Link](https://www.ethos-link.com) — practical software for growing businesses. We build tools for hospitality operators who need clear workflows, fast onboarding, and real human support.
 
-We also build [Reviato](https://www.reviato.com), “More stars. Less hassle.”.
-Reviato helps restaurants, hotels, clinics, vets and other local businesses collect and analyse customer reviews, highlights recurring themes, and turns feedback into actionable next steps.
+We also build [Reviato](https://www.reviato.com), “Capture. Interpret. Act.”.
+Turn guest feedback into clear next steps for your team. Collect private appraisals, spot patterns across reviews, and act before small issues turn into public ones.

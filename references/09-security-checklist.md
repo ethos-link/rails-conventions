@@ -41,6 +41,10 @@ end
 
 Add `Sec-Fetch-Site` to the Vary header for proper caching.
 
+Turbo requests still require CSRF meta tags. When making custom non-GET
+JavaScript requests, include the `X-CSRF-Token` header from the Rails
+`csrf_meta_tags` output.
+
 ## SSRF Protection
 
 For webhooks and any user-provided URLs:
@@ -82,6 +86,9 @@ end
 ```
 
 **When to rate limit**: authentication actions, email sending endpoints, external API calls, resource creation endpoints.
+
+Keep user-facing rate-limit messages generic for authentication endpoints. Use
+i18n for user-facing strings when the host app does.
 
 ## Authn/Authz
 
@@ -175,7 +182,14 @@ redirect_to ALLOWED_REDIRECTS.include?(params[:return_to]) ? params[:return_to] 
 
 ## Data And Infra
 
-- Store secrets in credentials or environment, never in code.
+- Store app secrets in Rails credentials. Use environment variables for
+  deploy-provided infrastructure values such as database URLs, hostnames, and
+  platform tokens. Never commit secrets or decrypted credentials.
+- Use Active Record Encryption for sensitive persisted fields that the app must
+  query or display.
+- Store scalar IDs in sessions and cookies, not serialized models or mutable
+  domain state.
+- Use signed cookies for integrity and encrypted cookies for confidentiality.
 - Use CSRF protection for browser flows.
 - Enforce secure cookie/session settings in production.
 - Use parameterized queries to prevent injection.

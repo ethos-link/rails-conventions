@@ -14,12 +14,22 @@ If backend is unclear, ask before implementing backend-specific behavior. Do not
 
 - Keep jobs idempotent.
 - Keep arguments serializable and stable.
+- Prefer stable scalar IDs when deleted records, tenant boundaries, or retries
+  make GlobalID deserialization risky.
 - Keep retries intentional and bounded.
 - Keep transactions and enqueue timing safe.
+- A retry must not duplicate charges, emails, state transitions, or external
+  writes unless the domain explicitly allows it.
 
 ## `_later` and `_now` Convention
 
-When a model method enqueues a job that invokes another method on that same class, use `_later` for the async version. The synchronous method uses `_now` or the plain name:
+Run async operations in shallow job classes. The job should usually delegate
+the actual work back to a domain model or model-adjacent PORO instead of owning
+business logic itself.
+
+When a model method enqueues a job that invokes another method on that same
+class, use `_later` for the async version and `_now` for the synchronous
+version:
 
 ```ruby
 module Event::Relaying
@@ -29,16 +39,13 @@ module Event::Relaying
     after_create_commit :relay_later
   end
 
-  # Called by the job — the actual work
+  def relay_later
+    Event::RelayJob.perform_later(self)
+  end
+
   def relay_now
     # ...
   end
-
-  private
-    # Enqueues the job
-    def relay_later
-      Event::RelayJob.perform_later(self)
-    end
 end
 
 class Event::RelayJob < ApplicationJob
@@ -48,7 +55,8 @@ class Event::RelayJob < ApplicationJob
 end
 ```
 
-The `_later` method is usually private and called from callbacks. The plain method name is the public API that the job invokes.
+The `_later` method is the enqueueing API. The `_now` method performs the
+synchronous work and is what the job invokes.
 
 ## Shallow Jobs
 
@@ -149,6 +157,9 @@ module SmtpDeliveryErrorHandling
 end
 ```
 
+Keep retry windows bounded and visible in logs or error reporting. Do not retry
+validation failures or permanent provider rejections.
+
 ### Permanent Failures — Swallow Gracefully
 
 Do not fail the job for unrecoverable errors. Log at info level:
@@ -178,6 +189,11 @@ Set `enqueue_after_transaction_commit` to prevent jobs from running before data 
 # In initializer
 ActiveJob::Base.enqueue_after_transaction_commit = true
 ```
+
+When enqueueing is part of a state transition, the state write and enqueue
+decision must be transaction-safe. Prefer `after_commit`, Rails transactional
+enqueueing, or an explicit outbox-style persisted event over callbacks that can
+fire before rollback.
 
 ## Stagger Recurring Jobs
 
