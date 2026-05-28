@@ -19,6 +19,14 @@ class UserMembershipEntry < ApplicationRecord
 
 Keep one canonical term per concept across code, APIs, and docs. When a term changes, update call chains — do not add long-lived wrappers.
 
+Every project should document its canonical terms in `docs/domain-terms.md` or
+an equivalent project-specific file linked from the README. Keep that document
+current when adding, renaming, or deprecating domain terms.
+
+Keep presentation wording separate from domain naming. UI copy may vary for
+readability, but models, params, serializers, routes, APIs, persisted fields,
+and technical docs should use the canonical term.
+
 ### Positive Predicates
 
 Prefer positive predicate names over negative ones:
@@ -108,6 +116,12 @@ Start simple. Extract only when pain emerges.
 ```
 
 **Rule of three**: Duplicate a pattern twice before abstracting. The third duplication reveals the real boundary.
+
+Avoid importing architecture from other ecosystems when Rails has a direct
+convention. Do not add a parallel layer to wrap ordinary model, controller,
+job, mailer, route, or view behavior. A new abstraction is justified only when
+it removes real duplication, owns a clear domain concept, or coordinates a
+cross-domain workflow that does not naturally belong to one model.
 
 ### Concerns: When And How
 

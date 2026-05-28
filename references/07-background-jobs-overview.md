@@ -19,7 +19,13 @@ If backend is unclear, ask before implementing backend-specific behavior. Do not
 
 ## `_later` and `_now` Convention
 
-When a model method enqueues a job that invokes another method on that same class, use `_later` for the async version. The synchronous method uses `_now` or the plain name:
+Run async operations in shallow job classes. The job should usually delegate
+the actual work back to a domain model or model-adjacent PORO instead of owning
+business logic itself.
+
+When a model method enqueues a job that invokes another method on that same
+class, use `_later` for the async version and `_now` for the synchronous
+version:
 
 ```ruby
 module Event::Relaying
@@ -29,16 +35,13 @@ module Event::Relaying
     after_create_commit :relay_later
   end
 
-  # Called by the job — the actual work
+  def relay_later
+    Event::RelayJob.perform_later(self)
+  end
+
   def relay_now
     # ...
   end
-
-  private
-    # Enqueues the job
-    def relay_later
-      Event::RelayJob.perform_later(self)
-    end
 end
 
 class Event::RelayJob < ApplicationJob
@@ -48,7 +51,8 @@ class Event::RelayJob < ApplicationJob
 end
 ```
 
-The `_later` method is usually private and called from callbacks. The plain method name is the public API that the job invokes.
+The `_later` method is the enqueueing API. The `_now` method performs the
+synchronous work and is what the job invokes.
 
 ## Shallow Jobs
 

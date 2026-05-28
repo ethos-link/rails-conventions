@@ -177,7 +177,7 @@ end
 
 ## Controller And Model Interactions
 
-Favor a vanilla Rails approach: thin controllers directly invoking a rich domain model. Do not use services or other artifacts to connect the two.
+Favor a vanilla Rails approach: thin controllers directly invoking a rich domain model. Do not use services or other artifacts merely to connect the two.
 
 Invoking plain Active Record operations is fine:
 
@@ -199,7 +199,8 @@ class Cards::ClosuresController < ApplicationController
 end
 ```
 
-When justified, POROs are acceptable but do not treat them as special artifacts:
+When justified, POROs, services, or form objects are acceptable, but do not
+treat them as special artifacts:
 
 ```ruby
 Signup.new(email_address: email_address).create_identity

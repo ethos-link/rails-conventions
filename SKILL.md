@@ -25,6 +25,27 @@ Follow this workflow and load only the references needed for the task.
 4. Prefer small, reversible changes with tests.
 5. Report tradeoffs explicitly when choosing architecture.
 
+## Non-Negotiable Rails Defaults
+
+Rails applications should look like Rails applications. Prefer the framework's
+native resource, model, controller, job, mailer, and view boundaries before
+introducing extra architectural layers. Avoid architecture borrowed from other
+ecosystems when Rails already has a direct convention for the problem.
+
+Classes and modules must earn their place. Choose the fewest concepts, files,
+and lines of code that keep the behavior clear. Do not add wrappers, aliases,
+facades, or parallel abstractions whose main purpose is naming, indirection, or
+making tests easier.
+
+Keep one owner per behavior and one owner per definition. Prompts, schemas,
+enums, constants, validation rules, normalization logic, and domain terminology
+must each have a canonical home.
+
+Every Rails project should maintain a domain terminology document, usually
+`docs/domain-terms.md`, and link it from the README or equivalent contributor
+entrypoint. The document should define canonical domain terms, deprecated terms,
+and naming rules for code, routes, params, APIs, persisted fields, and docs.
+
 ## Mandatory Codebase Scan
 
 Always read these files first when available:
@@ -87,7 +108,9 @@ Load references based on the task:
 
 ## Authentication Patterns
 
-Prefer Rails 8.1 built-in authentication. When implementing custom auth:
+Existing authentication and local naming are authoritative. For new Rails 8.1
+applications, prefer the built-in authentication generator. When implementing
+custom auth:
 
 - Use password-based authentication with bcrypt via `has_secure_password`.
 - Use magic link codes (not full magic link URLs) for account confirmation and email verification.

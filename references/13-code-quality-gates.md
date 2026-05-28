@@ -34,8 +34,9 @@ end
 
 # Good — extracted, single abstraction per method
 def process
-  return unless valid?
-  active_items.each { |item| process_item(item) }
+  if valid?
+    active_items.each { |item| process_item(item) }
+  end
 end
 
 private

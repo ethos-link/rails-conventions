@@ -204,9 +204,16 @@ Tests ship with features in the same commit — not beforehand, not afterward. S
 ## Test Quality
 
 - Assert behavior and observable outcomes, not framework internals.
+- Prefer persisted state, rendered output, delivered mail, enqueued jobs, and
+  other real side effects over mocks, stubs, or expectations on framework
+  plumbing.
 - Controller/system tests must assert response/redirect plus content or side effects.
 - Keep fixtures small (~10 records per type) for speed and determinism.
-- Avoid over-mocking core domain behavior.
+- Do not test private methods directly. If private behavior is hard to reach
+  through public behavior, simplify the production design.
+- Avoid mocks and stubs for core domain behavior. Use them only at external
+  boundaries or when the alternative would make the test slow, flaky, or
+  unclear.
 
 ## Antipatterns To Avoid
 
