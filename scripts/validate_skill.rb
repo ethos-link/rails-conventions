@@ -59,7 +59,12 @@ end
 stale_phrases = [
   "Testing strategy (Minitest/RSpec alignment)",
   "Prefer Rails 8.1 built-in authentication",
-  "parameter object"
+  "parameter object",
+  "./skills/rails-conventions",
+  ".claude-plugin",
+  "skills/conventions",
+  "agent_skills",
+  "agent-skills"
 ]
 
 markdown_files.each do |path|
@@ -69,6 +74,15 @@ markdown_files.each do |path|
   stale_phrases.each do |phrase|
     errors << "#{relative}: stale phrase #{phrase.inspect}" if content.include?(phrase)
   end
+end
+
+standalone_forbidden_paths = %w[
+  .claude-plugin
+  skills/conventions
+]
+
+standalone_forbidden_paths.each do |reference|
+  errors << "Standalone skill must not include #{reference}" if root.join(reference).exist?
 end
 
 if errors.any?
