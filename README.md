@@ -42,42 +42,44 @@ It guides agents to:
 - API and serialization conventions
 - Optional 37signals-inspired profile
 
-## Validate and package
+## Validate, install, and update
 
-Run the bundled validation script first:
+Run the bundled validation script before publishing changes:
 
 ```bash
 ruby scripts/validate_skill.rb
 ```
 
-You can use [`agent_skills`](https://github.com/rubyonai/agent_skills) for standard validation and packaging.
+Install or update the skill with [`skills`](https://www.npmjs.com/package/skills):
 
 ```bash
-# install CLI
-gem install agent_skills
+# install from source
+npx skills add git@github.com:ethos-link/rails-conventions.git --skill rails-conventions
 
-# validate
-agent-skills validate ./skills/rails-conventions
-
-# package
-agent-skills pack ./skills/rails-conventions
-
-# inspect metadata
-agent-skills info ./skills/rails-conventions
+# update an existing install
+npx skills update rails-conventions
 ```
 
-## Example trigger
+## Forward-test prompts
 
-Use this skill when a request sounds like:
+Use these prompts to check that the skill triggers correctly and loads only the
+references needed for the task:
 
 ```text
 Implement a new billing webhook endpoint in this Rails app, matching existing conventions and tests.
 ```
 
+```text
+Review this Rails 8 pull request for production readiness, focusing on naming, data integrity, security, and missing tests.
+```
+
+```text
+This Rails app uses GoodJob. Add a background job for exporting account reports without changing the queue backend.
+```
+
 ## References
 
 - Agent Skills spec: <https://agentskills.io>
-- `agent_skills` CLI: <https://github.com/rubyonai/agent_skills>
 - Heavily inspired by: <https://github.com/marckohlbrugge/unofficial-37signals-coding-style-guide>
 
 ## License
