@@ -125,6 +125,10 @@ end
 
 ## Code Language
 
+Prefer one-word precise names. Qualify only when a bare word is ambiguous
+(`contact_phone`, `place_eid`). One canonical term per concept; do not add
+parallel names for the same thing.
+
 Names should be concrete domain nouns or intention-revealing verbs. Public APIs
 should say what the caller is asking the object to do, not how the object is
 implemented.
@@ -189,6 +193,7 @@ Keep architecture rules in the topic references:
 ## Fail-Fast
 
 - Avoid defensive patterns that hide errors (`respond_to?`, `try`, dynamic `send`, broad `rescue`).
+- Do not use `send` or `public_send` for a closed set of methods. Use `case`.
 - Prefer explicit contracts (`find_by!`, `fetch`).
 - Rescue only specific exceptions with intentional handling.
 - When a call chain is incorrect, update the call chain and underlying data contracts; do not add indirection layers.

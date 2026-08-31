@@ -47,6 +47,13 @@ Keep one owner per behavior and one owner per definition. Prompts, schemas,
 enums, constants, validation rules, normalization logic, and domain terminology
 must each have a canonical home.
 
+Identifier names must state ownership. `id` and `uuid` are owned by the local
+application. `eid` means an identifier owned by another application or provider
+and stored locally. Never alias a local `id` or `uuid` as `eid`. Use a qualified
+name such as `place_eid`, `listing_eid`, or `review_eid` when a record can carry
+identifiers from more than one external owner. A local identifier becomes an
+`*_eid` only in the consuming system, never in its owning system.
+
 Every Rails project should maintain a domain terminology document, usually
 `docs/domain-terms.md`, and link it from the README or equivalent contributor
 entrypoint. The document should define canonical domain terms, deprecated terms,
