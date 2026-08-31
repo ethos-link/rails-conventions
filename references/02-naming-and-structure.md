@@ -4,6 +4,10 @@
 
 ### Domain Language
 
+Prefer one-word precise names. Qualify only when a bare word is ambiguous
+(`contact_phone`, `place_eid`). One canonical term per concept; do not add
+parallel names for the same thing.
+
 Use domain terms over technical names:
 
 ```ruby
@@ -26,6 +30,24 @@ current when adding, renaming, or deprecating domain terms.
 Keep presentation wording separate from domain naming. UI copy may vary for
 readability, but models, params, serializers, routes, APIs, persisted fields,
 and technical docs should use the canonical term.
+
+### Identifier Ownership
+
+- `id` and `uuid` are internal: the current application owns them.
+- `eid` is external: another application or provider owns it.
+- Never expose a local `id` or `uuid` through an `eid` alias inside its owning
+  application.
+- Use bare `eid` only when the external owner is unambiguous from the model.
+- Use qualified names such as `place_eid`, `listing_eid`, and `review_eid` when
+  more than one external identity can appear on the same record.
+- When an identifier crosses a boundary, the owner sends `id` or `uuid`; the
+  consumer stores that value under a qualified `*_eid` name.
+
+For example, a provider-specific Listing stores its own Google or Tripadvisor
+identifier as `eid`, its Reviato identity as `uuid`, and a Places-owned Place
+identifier as `place_eid`. A Review stores its own provider identifier as `eid`
+and may use `listing_eid` for the external identifier of its associated Listing.
+Reviato must not alias its own Listing UUID as `eid`.
 
 ### Positive Predicates
 
