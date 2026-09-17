@@ -48,6 +48,90 @@ recent_card:
   created_at: <%= 1.hour.ago %>
 ```
 
+## Split Responsibilities By Layer
+
+Each test layer owns a different question. Do not re-prove the same logic at
+every layer.
+
+| Layer | Proves | Coverage posture |
+|-------|--------|------------------|
+| Unit (models, POROs, parsers) | Domain rules, invariants, edge cases | Thorough — high coverage of the logic itself is valuable |
+| Job unit | Idempotency, retries, payload handling | Thorough for the job/domain method under test |
+| Request / integration | HTTP contract: status, redirect, authz, a few durable side effects | Narrow and value-based |
+| System | Critical user journeys that need the browser | Few, high-signal flows only |
+
+### Value-Based Assertions
+
+Assert outcomes that matter to the user or the system — not markup dumps,
+framework internals, or every line of a template.
+
+- Prefer persisted state, response status/redirect, flash, enqueued jobs,
+  delivered mail, and other real side effects.
+- Prefer one clear page signal (for example an `h1` or a stable
+  `data-test-id`) over asserting the full HTML body.
+- Prefer a couple of side effects after a request over repeating model-unit
+  assertions inside the request test.
+
+```ruby
+# Good — request test: HTTP + heading + side effects
+test "closing a card" do
+  card = cards(:urgent_bug)
+
+  assert_difference -> { Event.where(action: :closed).count }, 1 do
+    post card_closure_path(card)
+  end
+
+  assert_redirected_to card_path(card)
+  follow_redirect!
+  assert_select "h1", text: card.title
+  assert card.reload.closed?
+end
+
+# Bad — request test that re-tests the model and scrapes the whole page
+test "closing a card" do
+  post card_closure_path(cards(:urgent_bug))
+
+  assert_select "div.card-header span.badge", text: "Closed"
+  assert_select ".activity-feed .event", count: 12
+  assert_select "p", text: /closed by/
+  assert_equal users(:david), cards(:urgent_bug).reload.closure.creator
+  assert_equal "closed", cards(:urgent_bug).events.last.action
+  # ...more model-edge assertions that belong in CardTest
+end
+```
+
+```ruby
+# Good — unit test owns the logic thoroughly
+class CardTest < ActiveSupport::TestCase
+  test "closing creates closure and event" do
+    card = cards(:urgent_bug)
+
+    assert_difference "Event.count", 1 do
+      card.close(user: users(:david))
+    end
+
+    assert card.closed?
+    assert_equal users(:david), card.closure.creator
+  end
+
+  test "closing is idempotent" do
+    card = cards(:urgent_bug)
+    card.close(user: users(:david))
+
+    assert_no_difference "Event.count" do
+      card.close(user: users(:david))
+    end
+  end
+
+  test "closed cards cannot be edited" do
+    card = cards(:urgent_bug)
+    card.close(user: users(:david))
+
+    assert_not card.editable_by?(users(:david))
+  end
+end
+```
+
 ## Test Structure
 
 ### Unit Tests (Models)
@@ -77,6 +161,9 @@ end
 
 ### Integration Tests (Controllers)
 
+Keep these short. Prove the request path works; leave combinatorial logic to
+unit tests.
+
 ```ruby
 class CardsControllerTest < ActionDispatch::IntegrationTest
   setup do
@@ -91,6 +178,8 @@ class CardsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to card_path(Card.last)
+    follow_redirect!
+    assert_select "h1", text: "New feature"
   end
 
   test "unauthorized users cannot delete" do
@@ -107,7 +196,8 @@ end
 
 ### System Tests
 
-Use `data-test-id` selectors for stable, intention-revealing test targets:
+Use `data-test-id` selectors for stable, intention-revealing test targets.
+Assert the journey outcome, not every visible node.
 
 ```ruby
 class CardSystemTest < ApplicationSystemTestCase
@@ -180,6 +270,8 @@ end
 - Cassette naming: `{platform}_{resource}[optional_suffix].yml`.
 - Inbound webhooks use JSON captures in `test/support/webhook_captured/` (do not use VCR).
 
+For webhook delivery architecture, load `references/14-webhooks.md`.
+
 ## VCR For External APIs
 
 ```ruby
@@ -198,18 +290,21 @@ Tests ship with features in the same commit — not beforehand, not afterward. S
 
 ## Minimum Coverage For Feature Work
 
-- Model/business behavior tests.
-- Request/controller integration tests covering happy and sad paths.
-- Job enqueue/execution tests.
-- System tests for critical user flows when UI changes.
+- Model/business behavior tests with thorough coverage of the logic.
+- Request/controller tests for happy and sad HTTP paths — status, authz, and a
+  few side effects — not full-page content inventories.
+- Job enqueue/execution tests for async boundaries.
+- System tests only for critical user flows when UI behavior cannot be proven
+  cheaper at a lower layer.
 
 ## Test Quality
 
 - Assert behavior and observable outcomes, not framework internals.
-- Prefer persisted state, rendered output, delivered mail, enqueued jobs, and
+- Prefer persisted state, rendered landmarks, delivered mail, enqueued jobs, and
   other real side effects over mocks, stubs, or expectations on framework
   plumbing.
-- Controller/system tests must assert response/redirect plus content or side effects.
+- Split assertions by responsibility: deep logic in unit tests; thin HTTP
+  contracts in request tests.
 - Keep fixtures small (~10 records per type) for speed and determinism.
 - Do not test private methods directly. If private behavior is hard to reach
   through public behavior, simplify the production design.
@@ -239,6 +334,17 @@ domain collaborators just to avoid designing a clearer public API.
 
 ## Antipatterns To Avoid
 
+### No Full-Page Content Inventories In Request Tests
+
+Do not `assert_select` every paragraph, badge, and partial. Pick a landmark and
+side effects. Exhaustive rendering checks belong in focused view/component tests
+only when the app already uses that layer, or in a rare system test.
+
+### No Logic Coverage Gaps Filled By Request Tests
+
+If a model method has many branches, cover them in the model test. A request
+test that posts once does not replace unit coverage.
+
 ### No `sleep` In Tests
 
 Do not use `sleep` to wait for async behavior. Use `travel_to` for time-dependent tests or event-based waits:
@@ -256,7 +362,8 @@ end
 
 ### No Tests Coupled To HTML Structure
 
-Use `data-test-id` selectors, not CSS class or tag-based selectors:
+Use `data-test-id` selectors or semantic landmarks (`h1`, role), not brittle CSS
+class trees:
 
 ```ruby
 # Bad — breaks when markup changes

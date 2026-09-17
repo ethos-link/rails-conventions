@@ -195,6 +195,69 @@ decision must be transaction-safe. Prefer `after_commit`, Rails transactional
 enqueueing, or an explicit outbox-style persisted event over callbacks that can
 fire before rollback.
 
+## Tenant Context In Jobs
+
+Request-scoped `Current` attributes are not available when a job runs.
+
+- Capture tenant/account (and any other required ambient context) at enqueue
+  time as serializable IDs or GlobalIDs.
+- Restore that context around `perform` (for example
+  `Current.set(account: account) { ... }` or the app's existing helper).
+- Recurring jobs that touch tenant data must iterate tenants explicitly rather
+  than assuming a current account.
+
+```ruby
+class ApplicationJob < ActiveJob::Base
+  around_enqueue do |job, block|
+    job.account_id ||= Current.account&.id
+    block.call
+  end
+
+  around_perform do |job, block|
+    if job.account_id
+      Current.set(account: Account.find(job.account_id), &block)
+    else
+      block.call
+    end
+  end
+end
+```
+
+Adapt to the app's existing job/tenant helpers when present. Do not invent a
+parallel Current system.
+
+## Crash-Safe Fan-Out
+
+For long iterations (webhook fan-out, broadcasts, backfills), prefer cursor-based
+progress over one giant loop that restarts from zero after a crash.
+
+When the Rails version and Active Job setup support it, use
+`ActiveJob::Continuable` with `step` + cursor advancement. Otherwise use an
+explicit cursor column or keyed progress record. Either way:
+
+- Resume from the last successful cursor.
+- Keep each step idempotent.
+- Avoid holding a single multi-minute transaction across the whole fan-out.
+
+```ruby
+class DeliverWebhooksJob < ApplicationJob
+  include ActiveJob::Continuable
+
+  def perform(event)
+    step :deliver do |step|
+      event.matching_webhooks.find_each(start: step.cursor) do |webhook|
+        event.deliveries.create!(webhook: webhook)
+        step.advance!(from: webhook.id)
+      end
+    end
+  end
+end
+```
+
+Verify Continuable availability against the app's Rails version before using it.
+If unavailable, implement an equivalent cursor pattern — do not pretend the API
+exists.
+
 ## Stagger Recurring Jobs
 
 Prevent resource spikes by offsetting schedules:

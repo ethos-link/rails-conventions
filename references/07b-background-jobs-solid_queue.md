@@ -31,6 +31,13 @@ Use this profile when `solid_queue` is the active adapter.
 - Set a duration long enough to cover expected job runtime.
 - Decide whether conflicts should block or discard based on domain semantics.
 
+## Crash-Safe Work
+
+- For long fan-out or backfill jobs, use Continuable or an explicit cursor as
+  described in `references/07-background-jobs-overview.md`.
+- Keep Solid Queue schema and binstubs installer-generated when adding the gem;
+  do not hand-write `db/queue_schema.rb` or `bin/jobs`.
+
 ## Implementation Guidance
 
 - Keep jobs backend-agnostic unless Solid Queue-specific behavior is required.

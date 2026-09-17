@@ -202,3 +202,56 @@ Always scope broadcasts by account in multi-tenant apps:
 ```ruby
 broadcast_to [Current.account, card], target: "comments"
 ```
+
+## Realtime Architecture
+
+Prefer the lightest realtime topology that fits the product:
+
+- **Streams-only (default for CRUD apps):** `turbo_stream_from`,
+  `broadcasts_refreshes` + morph, lazy frames with ETags. No custom ActionCable
+  channels.
+- **Cable-augmented:** custom channels only for tiny ephemeral signals
+  (presence, typing, unread pings) where rendering HTML would be wasteful.
+  Durable DOM state still goes through Turbo Streams.
+
+Rule of thumb: Turbo Streams for anything that changes the DOM; bare
+ActionCable only for lightweight JSON signals.
+
+### Broadcast Operations
+
+- Keep broadcast logic on models/concerns, not controllers.
+- Scope every stream name by tenant/user — stream names are isolation
+  boundaries.
+- Dual-publish when needed: direct subscribers plus an account-wide aggregate
+  stream.
+- Gate noisy secondary broadcasts on meaningful attribute changes.
+- Suppress broadcasts around incidental background touches
+  (`Model.suppressing_turbo_broadcasts`) when analysis jobs would spam clients.
+- Prefer `broadcast_*_later` when synchronous rendering hurts request latency.
+- Fan out efficiently: render once when possible, then deliver per recipient.
+- Broadcast partials lack request context — wrap URL/attachment helpers so
+  asset and tenant URLs resolve.
+
+### Client-Owned State During Morphs
+
+- Use `data-turbo-permanent` for trays, in-progress editors, and other
+  client-owned UI that must survive navigation/morph.
+- Block morph from clobbering local state when needed via
+  `turbo:before-morph-attribute` + `preventDefault()`.
+- Exempt realtime-heavy pages from Turbo page cache when frame-level ETags are
+  the better cache boundary.
+
+### Optimistic UI Without A SPA
+
+For snappy creates, server-render a `<template>` partial with placeholder
+tokens; the client clones it with a temporary ID before submit; the stream
+response replaces it with the persisted record.
+
+## Testing Realtime
+
+- Assert model broadcasts with `assert_turbo_stream_broadcasts` /
+  `assert_no_turbo_stream_broadcasts`.
+- Assert controller stream responses with `as: :turbo_stream` and a targeted
+  `assert_turbo_stream`.
+- Keep assertions value-based: one target/action and the side effect, not the
+  entire stream HTML. See `references/10-testing-strategy.md`.

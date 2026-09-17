@@ -4,7 +4,7 @@ description: Rails 8.x application architecture, implementation, and review guid
 license: MIT
 compatibility: Compatible with any agent runtime that supports the Agent Skills SKILL.md convention and optional references directory loading.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   ethos_link.company: Ethos Link
   ethos_link.company_url: https://www.ethos-link.com
   ethos_link.product: Reviato
@@ -26,6 +26,7 @@ Follow this workflow and load only the references needed for the task.
 5. Report tradeoffs explicitly when choosing architecture.
 6. Verify version-sensitive APIs against official Rails or gem docs before
    changing guidance or introducing new APIs.
+7. Create generator-owned files only by running the generator — never invent them.
 
 ## Non-Negotiable Rails Defaults
 
@@ -58,6 +59,28 @@ Every Rails project should maintain a domain terminology document, usually
 `docs/domain-terms.md`, and link it from the README or equivalent contributor
 entrypoint. The document should define canonical domain terms, deprecated terms,
 and naming rules for code, routes, params, APIs, persisted fields, and docs.
+
+## Generator-Owned Files
+
+Never hand-write files that Rails or a gem installer is supposed to generate.
+Invented timestamps, installer stubs, and guessed schema dumps cause drift and
+broken deploys.
+
+Run the generator (or installer task) and then edit the result:
+
+- Migrations: `bin/rails generate migration ...` / `bin/rails g model ...`
+- Mailers, jobs, controllers, scaffolds: the matching `bin/rails g ...`
+- Auth: `bin/rails generate authentication` when that is the app's path
+- Queue/cache/cable installers: the gem or Rails install task
+  (`solid_queue:install`, `good_job:install`, and equivalents)
+- App/framework config seeds created by installers (`db/*_schema.rb`,
+  `config/queue.yml`, binstubs such as `bin/jobs`) when the app does not
+  already have them
+
+After generating, adapt the file to local conventions. Do not invent migration
+version numbers or timestamps. Do not recreate installer output from memory
+when the installer exists. If a generator cannot be run in this environment,
+say so and provide the exact command for the user — do not fabricate the file.
 
 ## Mandatory Codebase Scan
 
@@ -119,6 +142,7 @@ Load references based on the task:
 - API-only and mixed-mode API patterns: `references/11-api-mode-and-serialization.md`
 - 37signals-inspired style profile: `references/12-37signals-inspired-profile.md`
 - Code quality thresholds and detection patterns: `references/13-code-quality-gates.md`
+- Inbound/outbound webhooks and delivery reliability: `references/14-webhooks.md`
 
 ## Task Routing
 
@@ -130,6 +154,7 @@ Load references based on the task:
 | Routes or custom actions | `references/05-routes-rest-and-resources.md`, `references/04-controllers-and-params.md` |
 | Hotwire, Turbo, Stimulus | `references/06-hotwire-turbo-stimulus.md`, `references/10-testing-strategy.md` |
 | Background jobs | `references/07-background-jobs-overview.md`, adapter-specific `07a` or `07b`, `references/10-testing-strategy.md` |
+| Webhooks (inbound or outbound) | `references/14-webhooks.md`, `references/09-security-checklist.md`, `references/07-background-jobs-overview.md`, `references/10-testing-strategy.md` |
 | API endpoint or serializer | `references/11-api-mode-and-serialization.md`, `references/04-controllers-and-params.md`, `references/09-security-checklist.md` |
 | Performance, cache, query work | `references/08-performance-caching-and-db.md`, `references/03-models-and-data.md` |
 | Architecture or object boundary | `references/02-naming-and-structure.md`, `references/12-37signals-inspired-profile.md` |
@@ -153,9 +178,10 @@ When implementing custom auth:
 
 For implementation tasks, produce:
 
-1. Required schema changes with migrations.
+1. Required schema changes via generated migrations (see Generator-Owned Files).
 2. Model/controller/view/job code following local conventions.
-3. Tests matching local framework.
+3. Tests matching local framework, split by responsibility (see
+   `references/10-testing-strategy.md`).
 4. Brief risk notes (security, performance, rollout concerns).
 5. Source notes for version-sensitive APIs when current docs were checked.
 

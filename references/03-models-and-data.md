@@ -231,6 +231,11 @@ scope :by_title_asc, -> { ... }
 
 ## Migration Rules
 
+Generate migrations with Rails — never invent migration filenames, timestamps,
+or version numbers by hand. Run `bin/rails generate migration ...` (or the
+model/scaffold generator), then edit the generated file. See Generator-Owned
+Files in `SKILL.md`.
+
 - Add indexes for foreign keys, lookup columns, and common query patterns.
 - Use foreign keys for referential integrity unless the app has a documented
   reason not to.
@@ -238,8 +243,37 @@ scope :by_title_asc, -> { ... }
   error messages; they do not replace database integrity.
 - Keep PostgreSQL enum migrations explicit. Adding enum values is supported,
   but removing values is not simple or reversible.
-- Backfill data safely in batches for large tables.
 - Keep migrations additive and reversible where practical.
+- Small inline backfills are fine in one migration (add column → SQL update →
+  tighten constraint). Long-running or risky backfills leave the deploy
+  migration path entirely.
+
+### Staged Rollouts
+
+Split risky schema work across deploys:
+
+- **Column replacement**: add nullable column → dual-write/backfill → read from
+  new column → enforce constraints → drop old column later.
+- **Constraint hardening**: clean/backfill data first, then add the
+  index/constraint, then rely on it in application code.
+- **Destructive changes**: stop reads/writes in app code → deploy → drop
+  columns/tables only after a confirmation window.
+
+Safe default for required columns: add nullable → backfill → set `NOT NULL`.
+
+### Script Backfills
+
+Long-running data work belongs in a manual script (for example
+`script/migrations/*.rb` or the app's existing ops path), not in
+`db:migrate` during deploy:
+
+- Document preconditions and run instructions in a header comment.
+- Print a preflight scope before mutating.
+- Make reruns safe (skip already-processed rows).
+- Batch with `find_each` / `in_batches`.
+
+If the app already has a backfill convention, follow it instead of inventing a
+new directory.
 
 ### Never Reference Application Models
 
