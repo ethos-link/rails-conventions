@@ -208,6 +208,8 @@ Request-scoped `Current` attributes are not available when a job runs.
 
 ```ruby
 class ApplicationJob < ActiveJob::Base
+  attr_accessor :account_id
+
   around_enqueue do |job, block|
     job.account_id ||= Current.account&.id
     block.call
@@ -220,8 +222,22 @@ class ApplicationJob < ActiveJob::Base
       block.call
     end
   end
+
+  def serialize
+    super.merge("account_id" => account_id)
+  end
+
+  def deserialize(job_data)
+    super
+    self.account_id = job_data["account_id"]
+  end
 end
 ```
+
+Custom job attributes require both accessors and serialization hooks; an
+accessor alone does not survive the queue round trip. Alternatively, pass the
+account as an explicit job argument. See the
+[Active Job serialization API](https://api.rubyonrails.org/classes/ActiveJob/Core.html).
 
 Adapt to the app's existing job/tenant helpers when present. Do not invent a
 parallel Current system.
@@ -246,13 +262,26 @@ class DeliverWebhooksJob < ApplicationJob
   def perform(event)
     step :deliver do |step|
       event.matching_webhooks.find_each(start: step.cursor) do |webhook|
-        event.deliveries.create!(webhook: webhook)
+        event.deliveries.create_or_find_by!(webhook: webhook)
         step.advance!(from: webhook.id)
       end
     end
   end
 end
 ```
+
+This example requires a unique database index on `deliveries(event_id,
+webhook_id)` with non-null foreign keys, added through a generated migration.
+Use the database constraint rather than a model uniqueness validation here:
+`create_or_find_by!` recovers from a unique constraint violation, not a
+validation failure. See the
+[Active Record API](https://api.rubyonrails.org/classes/ActiveRecord/Relation.html#method-i-create_or_find_by).
+
+If the worker dies after inserting a delivery but before saving its cursor,
+replay finds the existing delivery instead of duplicating it. Enqueue sending
+only when the delivery is first created (after commit), and retain delivery
+rows for as long as the dispatch can be replayed. Cursor tracking alone does
+not make side effects idempotent.
 
 Verify Continuable availability against the app's Rails version before using it.
 If unavailable, implement an equivalent cursor pattern — do not pretend the API
