@@ -47,11 +47,22 @@ JavaScript requests, include the `X-CSRF-Token` header from the Rails
 
 ## SSRF Protection
 
-For webhooks and any user-provided URLs:
+For webhooks, push endpoints, unfurling, and any user-provided URLs:
 
-- Resolve DNS once, pin the IP.
-- Block private networks: loopback (127.0.0.0/8), private (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), link-local (169.254.0.0/16).
-- Validate at creation time AND request time.
+- Resolve DNS and validate the destination IP before connecting.
+- Block private networks: loopback (127.0.0.0/8), private (10.0.0.0/8,
+  172.16.0.0/12, 192.168.0.0/16), link-local (169.254.0.0/16), and
+  IPv4-mapped IPv6 equivalents. Link-local includes cloud metadata endpoints.
+- Pin the request to the validated IP to defeat DNS rebinding.
+- Validate at creation time and again at execution/send time.
+- Re-resolve and re-validate on every redirect hop — redirect chains are a
+  classic bypass.
+- Cap response sizes (Content-Length pre-check plus a streaming byte limit) to
+  prevent memory DoS.
+- Layer allowlists on top when the destination set is known (for example web
+  push vendor host suffixes).
+
+Load `references/14-webhooks.md` when building inbound or outbound webhooks.
 
 ## Content Security Policy
 
@@ -118,8 +129,16 @@ end
 
 ## Multi-Tenancy
 
-- Scope broadcasts by account to prevent cross-tenant leaks.
+- Scope all lookups through tenant/user ownership boundaries. Never establish
+  access with naked `Model.find(params[:id])` in tenant-aware flows.
+- Scope broadcasts and stream names by account/user to prevent cross-tenant
+  leaks.
+- Serialize tenant context into background jobs; restore it during perform.
+  See `references/07-background-jobs-overview.md`.
 - Disconnect deactivated users from ActionCable.
+- When the app uses path-based tenancy, keep URL helpers tenant-correct
+  (`script_name` / account prefix) for redirects, Active Storage, and webhook
+  payload links.
 
 ## Command Injection
 

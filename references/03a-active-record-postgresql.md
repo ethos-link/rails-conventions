@@ -56,9 +56,17 @@ PostgreSQL-specific data modeling, indexes, constraints, or queries.
 
 ## Data Safety
 
+- Generate migrations; do not hand-write timestamps or installer schema dumps.
 - Keep migrations reversible where possible.
 - Split schema changes and large backfills.
+- Prefer staged rollouts for required columns, replacements, and destructive
+  drops (see `references/03-models-and-data.md`).
+- Move long-running backfills to manual scripts outside the deploy migration
+  window.
 - Backfill large tables in batches.
 - Avoid long transactions that block writes.
 - Use locks deliberately and narrowly. Prefer constraints for correctness and
   locks for coordinating contested state transitions.
+- When tenanting indexes, prefer composite `[account_id, ...]` keys for
+  scoped uniqueness and drop redundant single-column indexes only with a
+  documented reason.

@@ -26,6 +26,8 @@ It guides agents to:
 - keep naming and architecture aligned with existing conventions
 - write backend-aware job code (`good_job` or `solid_queue`) without assumptions
 - catch risks early in security, performance, and test coverage
+- write value-based tests split by responsibility (deep unit coverage, thin request checks)
+- generate migrations and installer files instead of inventing them
 
 ## Coverage
 
@@ -34,13 +36,15 @@ It guides agents to:
 - Active Record modeling, PostgreSQL features, and migration discipline
 - Controllers, params, and response semantics
 - REST/resource-focused routing
-- Hotwire/Turbo/Stimulus patterns
+- Hotwire/Turbo/Stimulus patterns (including realtime posture)
 - Background jobs (adapter detection + backend-specific guidance)
+- Webhook inbound/outbound delivery reliability
 - Performance and caching strategy
-- Security checklist
-- Testing strategy (Minitest and Minitest::Mock)
+- Security checklist (including SSRF hardening and tenancy)
+- Testing strategy (value-based assertions, Minitest and Minitest::Mock)
 - API and serialization conventions
 - Optional 37signals-inspired profile
+- Generator-owned files policy (migrations, installers — never invent them)
 
 ## Validate, install, and update
 
@@ -75,6 +79,14 @@ Review this Rails 8 pull request for production readiness, focusing on naming, d
 
 ```text
 This Rails app uses GoodJob. Add a background job for exporting account reports without changing the queue backend.
+```
+
+```text
+Add a request test for closing a card: assert redirect, h1, and that the card is closed — do not scrape the whole page. Cover edge cases in the model test.
+```
+
+```text
+Generate a migration to add postponed_at to cards. Do not invent the timestamp filename by hand.
 ```
 
 ## References

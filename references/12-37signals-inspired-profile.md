@@ -24,7 +24,11 @@ stricter current rule.
 - Models, state records, data handling: `references/03-models-and-data.md`
 - Controller params and `params.expect`: `references/04-controllers-and-params.md`
 - CRUD routing: `references/05-routes-rest-and-resources.md`
+- Hotwire realtime posture: `references/06-hotwire-turbo-stimulus.md`
 - Background jobs: `references/07-background-jobs-overview.md`
+- Security and tenancy: `references/09-security-checklist.md`
+- Value-based testing: `references/10-testing-strategy.md`
+- Webhooks: `references/14-webhooks.md`
 - Code quality thresholds: `references/13-code-quality-gates.md`
 
 ## Cautions

@@ -9,6 +9,8 @@ Use this profile when `good_job` is the active adapter.
 - Confirm the worker runtime command and process topology.
 - Confirm GoodJob migrations are current. For upgrades, assert
   `GoodJob.migrated?` in the test suite when the app preserves GoodJob tables.
+- Generate GoodJob migrations via the gem installer/generator — do not invent
+  them by hand.
 
 ## Operational Practices
 
