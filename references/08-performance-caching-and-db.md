@@ -4,7 +4,10 @@
 
 - Eliminate N+1 queries with `includes`, `preload`, or explicit joins based on
   the query shape.
-- Add or refine indexes for real query paths.
+- Require a measured slow query before adding a performance index. Record the
+  query shape, representative timing, and plan; verify the result after indexing.
+  Unique indexes required for data integrity are exempt. A foreign key alone
+  does not justify an unmeasured performance index on its referencing columns.
 - Use relation composition over ad hoc SQL when possible.
 - Use explicit SQL only when measured performance or database features require
   it.

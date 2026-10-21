@@ -20,27 +20,15 @@ CSRF tokens get stale on cached pages, causing 422 errors on form submit.
 
 ### Sec-Fetch-Site Header
 
-Use the browser's `Sec-Fetch-Site` header as an additional CSRF check alongside traditional tokens:
+Keep the installed Rails CSRF verification intact. Do not override
+`verified_request?` to accept a request merely because `Sec-Fetch-Site` says
+`same-origin` or `same-site`; an OR condition bypasses failed token verification,
+and same-site includes sibling origins. Fetch Metadata policy must follow the
+installed framework's documented contract and the application's trust boundary.
+Do not reimplement a newer Rails security feature on an older version.
 
-```ruby
-module RequestForgeryProtection
-  extend ActiveSupport::Concern
-
-  private
-
-  def verified_request?
-    super || safe_fetch_site?
-  end
-
-  def safe_fetch_site?
-    %w[same-origin same-site].include?(
-      request.headers["Sec-Fetch-Site"]&.downcase
-    )
-  end
-end
-```
-
-Add `Sec-Fetch-Site` to the Vary header for proper caching.
+See the version-matched
+[Rails request forgery protection API](https://api.rubyonrails.org/v8.1.0/classes/ActionController/RequestForgeryProtection.html).
 
 Turbo requests still require CSRF meta tags. When making custom non-GET
 JavaScript requests, include the `X-CSRF-Token` header from the Rails

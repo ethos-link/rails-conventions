@@ -1,6 +1,6 @@
 name: rails-conventions
 title: Rails Conventions
-description: Rails 8 architecture, implementation, review, security, testing, and production-readiness guidance.
+description: Ruby 4.0+/Rails 8.1+ conventions, native API reuse, architecture, review, security, and testing.
 tags:
   - rails
   - ruby

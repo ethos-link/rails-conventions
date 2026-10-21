@@ -6,15 +6,19 @@ Start with server-rendered HTML that works without JS. Add Turbo for partial upd
 
 ## Turbo Morphing
 
-Enable globally for smooth updates:
+Configure refresh behavior through the supported page metadata in the layout:
 
-```ruby
-# config/initializers/turbo.rb
-Turbo.session.refresh_method = :morph
-Turbo.session.refresh_scroll = :preserve
+```html
+<meta name="turbo-refresh-method" content="morph">
+<meta name="turbo-refresh-scroll" content="preserve">
 ```
 
-- Use `data-turbo-permanent` for elements that should not refresh.
+Use the installed turbo-rails layout helpers when available. Do not configure
+browser session properties in a Ruby initializer. See the
+[Turbo refresh contract](https://turbo.hotwired.dev/handbook/page_refreshes).
+
+- Use `data-turbo-permanent` with a unique stable HTML `id` for elements that
+  should persist across refreshes.
 - Ensure unique DOM IDs — duplicates break morphing.
 - Set `refresh: :morph` on frames with `src` to prevent removal during morphs.
 
@@ -30,13 +34,15 @@ Turbo.session.refresh_scroll = :preserve
 <% end %>
 ```
 
-### Targeting Parent Frames
+### Targeting Other Frames
 
-Use `data-turbo-frame="_parent"` to target parent frame without hardcoding IDs:
+Use an explicit frame ID to target another frame, or `_top` for a full-page
+navigation. `_parent` is not a supported Turbo frame target. See the
+[Turbo frame reference](https://turbo.hotwired.dev/reference/frames).
 
 ```erb
 <turbo-frame id="search-results">
-  <a href="/items/123" data-turbo-frame="_parent">Select Item</a>
+  <a href="/items/123" data-turbo-frame="_top">Select Item</a>
 </turbo-frame>
 ```
 
@@ -45,7 +51,7 @@ Use `data-turbo-frame="_parent"` to target parent frame without hardcoding IDs:
 ```erb
 <%= turbo_frame_tag dom_id(card, :title) do %>
   <h1><%= card.title %></h1>
-  <link_to "Edit", edit_card_path(card) %>
+  <%= link_to "Edit", edit_card_path(card) %>
 <% end %>
 ```
 
@@ -55,11 +61,15 @@ Wrap independent sections in frames. Respond with targeted replacement instead o
 
 ```ruby
 def update
-  @record.update(record_params)
-  render turbo_stream: turbo_stream.replace(
-    [@record, :settings],
-    partial: "records/settings"
-  )
+  if @record.update(record_params)
+    render turbo_stream: turbo_stream.replace(
+      [@record, :settings],
+      partial: "records/settings",
+      locals: { record: @record }
+    )
+  else
+    render :edit, status: :unprocessable_entity
+  end
 end
 ```
 
@@ -151,12 +161,14 @@ export function debounce(fn, delay = 1000) {
 }
 ```
 
-## Links Over JavaScript
+## Links And Mutations
 
-Use plain `<a>` tags with `data-turbo-method: "post"` for state toggles. Better browser affordances (right-click, cmd+click) than JS-powered buttons.
+Use links for navigation and `button_to` or forms for state changes. A
+`data-turbo-method` link depends on JavaScript for its non-GET behavior; do not
+present it as a mutation that works without JavaScript.
 
 ```erb
-<%= link_to toggle_path, data: { turbo_method: "post" } %>
+<%= button_to "Close", card_closure_path(card), method: :post %>
 ```
 
 ## HTTP Caching
@@ -165,7 +177,7 @@ Use `fresh_when` and conditional GETs:
 
 ```ruby
 def show
-  @card = Card.find(params[:id])
+  @card = Current.account.cards.find(params[:id])
   fresh_when etag: [@card, Current.user, timezone_from_cookie]
 end
 ```

@@ -137,6 +137,12 @@ Prefer one-word precise names. Qualify only when a bare word is ambiguous
 (`contact_phone`, `place_eid`). One canonical term per concept; do not add
 parallel names for the same thing.
 
+Review new names across Ruby, JavaScript/Stimulus, component partials, params,
+i18n keys, and persisted fields. Namespaces and conventional suffixes (`Job`,
+`Controller`, `_at`, `_id`, `_eid`) do not excuse redundant descriptive words.
+Necessary ownership qualifiers and framework-defined APIs remain valid; do not
+rename public contracts or existing domain terminology for style alone.
+
 Names should be concrete domain nouns or intention-revealing verbs. Public APIs
 should say what the caller is asking the object to do, not how the object is
 implemented.

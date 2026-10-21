@@ -5,19 +5,19 @@ them during code review and as a self-check before finalizing changes.
 
 ## Class Size
 
-| Metric | Limit | Action When Exceeded |
+| Metric | Review signal | Response |
 |--------|-------|---------------------|
-| Lines | < 200 | Extract concerns, POROs, or sub-classes |
-| Public methods | < 15 | Split responsibilities into separate classes |
-| Private methods | < 7 | Simplify first; extract only when the new object has a stable responsibility |
+| Lines | Review above 200 | Check cohesion; extract only a stable responsibility |
+| Public methods | Review above 15 | Check whether the public API mixes responsibilities |
+| Private methods | Review above 7 | Simplify first; extract only when the new object has a stable responsibility |
 | Responsibilities | 1 | If you cannot describe the class in one sentence, it has too many responsibilities |
 
 ## Method Size
 
-| Metric | Limit | Action When Exceeded |
+| Metric | Review signal | Response |
 |--------|-------|---------------------|
-| Lines | < 10 preferred, < 20 hard limit | Extract method |
-| Nesting levels | < 2 | Extract inner logic into named methods |
+| Lines | Review above 20 | Simplify; extract only when a named method clarifies behavior |
+| Nesting levels | Review above 2 | Simplify branches or name cohesive inner logic |
 | Abstraction levels | 1 | Do not mix high-level orchestration with low-level details in the same method |
 
 ```ruby
@@ -54,9 +54,9 @@ end
 
 ## Parameter Count
 
-| Metric | Limit | Action When Exceeded |
+| Metric | Review signal | Response |
 |--------|-------|---------------------|
-| Method arguments | < 3 | Prefer keyword arguments or an existing domain object |
+| Positional arguments | Review above 2 | Prefer keywords or an existing domain object |
 
 ```ruby
 # Bad — too many positional args
@@ -75,21 +75,23 @@ def completion_notification(notification)
 end
 ```
 
-Prefer keyword arguments for Ruby APIs. Pass an existing domain object when one
-already owns the data. Create a value object only when it has behavior,
+Keyword arguments improve call-site clarity but do not remove overall API
+complexity; review large keyword lists too. Prefer keyword arguments for Ruby
+APIs. Pass an existing domain object when one already owns the data. Create a value object only when it has behavior,
 validation, or a stable domain name; do not create DTOs merely to group
 arguments.
 
 ## Concern Size
 
-| Metric | Limit | Action When Exceeded |
+| Metric | Review signal | Response |
 |--------|-------|---------------------|
-| Lines | 50–150 | Split into more focused concerns |
+| Lines | Review above 150 | Check capability cohesion; do not split merely by size |
 | Responsibility | 1 capability | If the concern mixes unrelated behavior, split it |
 
 ## Detection Quick Reference
 
-Use these patterns to identify violations in existing code:
+Use these patterns to find review candidates; confirm context before reporting
+a violation. Size and argument-count matches are signals, not failures:
 
 | Violation | Search Pattern | Files |
 |-----------|---------------|-------|
@@ -108,15 +110,27 @@ Use these patterns to identify violations in existing code:
 
 Run through this checklist before completing any implementation task:
 
-1. Class sizes within limits (< 200 lines, < 15 public methods).
-2. Method sizes within limits (< 10 lines preferred).
+1. Classes own cohesive responsibilities; review large classes and wide APIs.
+2. Methods read clearly; review long methods without mechanical extraction.
 3. No query logic in controllers or views.
 4. Bang methods used in jobs and orchestration code.
 5. No 3+ dot chains in views.
 6. No bare `rescue` or `rescue nil`.
 7. Migrations do not reference application models.
 8. External HTTP calls have explicit timeouts.
-9. Tests ship with the feature.
+9. Necessary tests ship with the changed behavior at its owning layer.
+10. No runtime debug prints or breakpoints are committed.
+11. New names follow `STYLE.md` across code, params, translations, and storage.
+12. Native API discovery is complete for new infrastructure (see `SKILL.md`).
+
+## Local Verification
+
+Run the smallest existing checks that cover the change. Documentation-only
+changes require diff review and `git diff --check`, not application tests. For
+broad changes or merge preparation, run the repository's required full gate.
+Do not invent universal lint/build commands; discover the project's tooling.
+Report actual checks and limitations without claiming an undefined compliance
+percentage. Commit-message requirements belong to the repository's Git policy.
 
 Before extracting, ask whether the new object has a stable name, responsibility,
 and public API. If extraction only hides complexity, simplify the original code

@@ -35,7 +35,9 @@ Treat destination failures and application bugs differently:
 
 - **Expected destination failures** (timeout, TLS, DNS, connection refused,
   HTTP 4xx/5xx): mark the delivery completed/failed with a symbolic error.
-  Do not retry the job as if the worker crashed.
+  Do not retry the job as if the worker crashed. If the delivery contract
+  requires retrying transient destination failures, schedule bounded delivery
+  attempts explicitly and persist their status; do not treat 4xx and 5xx alike.
 - **Unexpected exceptions** (our bug): mark errored and re-raise so Active Job
   retries.
 
