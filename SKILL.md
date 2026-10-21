@@ -19,8 +19,10 @@ Follow this workflow and load only the references needed for the task.
 
 ## Execution Workflow
 
-1. Inspect the codebase before proposing changes.
-2. Match existing conventions unless the user requests a migration.
+1. Inspect the codebase before proposing changes. For application code changes,
+   including tests, always load `STYLE.md` before editing.
+2. Preserve existing contracts and formatting; use verified native APIs for new
+   code rather than copying deprecated patterns from nearby examples.
 3. Check existing app, Ruby, Rails, and installed gem APIs before adding custom
    code. Follow the native API discovery gate below.
 4. Define the observable result and cheapest adequate check before changing
@@ -31,12 +33,40 @@ Follow this workflow and load only the references needed for the task.
 7. Verify version-sensitive APIs against official Ruby, Rails, or gem docs before
    changing guidance or introducing new APIs.
 8. Create generator-owned files only by running the generator — never invent them.
+9. Before handoff, perform the Final Diff Review below on the code actually
+   changed, then run the relevant checks on the final candidate.
 
 Proceed with authorized, reversible work using facts discoverable from the repo
 and runtime. Ask for unresolved product decisions or required approval; keep
 independent work moving while those decisions are pending. Classify failed
 checks before changing code, and report unavailable or inconclusive evidence
 explicitly. Repository deployment and other approval boundaries remain binding.
+
+## Final Diff Review
+
+For every application code change, re-read the final diff, including staged and
+unstaged changes and new files. Review the full task patch against its actual
+base, not only the last edit or commit. Follow relevant callers and contracts;
+keep unrelated pre-existing code outside cleanup scope.
+
+Apply `STYLE.md`'s generated-code review criteria:
+
+- Remove forwarding-only wrappers, redundant layers, and unnecessary `*Service`
+  names; a rename alone does not justify an abstraction.
+- Remove defensive fallbacks that conceal broken internal contracts, broad
+  exception swallowing, and compatibility branches for unsupported runtimes.
+- Remove comments that narrate the code; preserve contracts, invariants,
+  security assumptions, and non-obvious reasons.
+- Use the canonical term consistently across the changed call chain, and remove
+  obsolete internal paths once all supported callers have migrated.
+- Verify generator provenance for new generator-owned files and review tests
+  for stubbing the operation or asserting implementation details.
+
+Resolve violations before declaring the work ready. A legitimate exception
+needs a concrete supported contract or framework requirement in the handoff,
+not an inline suppression or blanket claim that a search found no hits. These
+are contextual review criteria, not a universal regex ban. The packaging
+validator cannot establish that this pass happened or that the code is correct.
 
 ## Runtime Baseline And Native API Discovery
 

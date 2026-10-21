@@ -134,7 +134,7 @@ Start simple. Extract only when pain emerges.
 1. Method on the model          → simple, local
 2. Concern (shared behavior)    → repeated capability or framework boundary
 3. PORO under model namespace   → complex operation, presentation, or view context
-4. Separate service class       → only when cross-domain orchestration is truly needed
+4. Domain-named orchestration   → only for a real cross-domain responsibility
 ```
 
 **Rule of three**: Duplicate a pattern twice before abstracting. The third duplication reveals the real boundary.
@@ -150,8 +150,9 @@ only forwards calls, renames another object, groups parameters without behavior,
 or exists to make a test easier, do not add it.
 
 Prefer model methods for local behavior. Prefer model-namespaced POROs for
-cohesive operations that do not fit one Active Record object. Use services only
-for true cross-domain orchestration with a stable public API.
+cohesive operations that do not fit one Active Record object. For true
+cross-domain orchestration, use a domain-named PORO with a stable public API;
+do not introduce a generic service layer or forwarding-only class.
 
 ### Concerns: When And How
 
@@ -262,10 +263,13 @@ Avoid reaching deep into model associations. Chained dot access (`@var.associati
 class Invoice < ApplicationRecord
   belongs_to :customer
   delegate :address, to: :customer
-  delegate :street, :city, :zip, to: :address, prefix: true, allow_nil: true
+  delegate :street, :city, :zip, to: :address, prefix: true
   # Now: invoice.address_street
 end
 ```
+
+This example requires an address. Use `allow_nil: true` only when absence is
+part of the documented contract, not to conceal invalid persisted state.
 
 ### In Controllers
 

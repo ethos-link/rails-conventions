@@ -21,36 +21,29 @@ them during code review and as a self-check before finalizing changes.
 | Abstraction levels | 1 | Do not mix high-level orchestration with low-level details in the same method |
 
 ```ruby
-# Bad — 3 nesting levels, mixed abstractions
-def process
-  if valid?
-    items.each do |item|
-      if item.active?
-        item.update!(status: :processed)
-        ExternalService.notify(item)
+# Bad: the containing object repeats each article's publication workflow.
+def publish
+  if approved?
+    articles.each do |article|
+      if article.ready?
+        article.update!(published_at: Time.current)
+        article.announce_later
       end
     end
   end
 end
 
-# Good — extracted, single abstraction per method
-def process
-  if valid?
-    active_items.each { |item| process_item(item) }
+# Good: scope selects the records; each article owns its publication contract.
+def publish
+  if approved?
+    articles.ready.find_each(&:publish)
   end
 end
-
-private
-
-def active_items
-  items.select(&:active?)
-end
-
-def process_item(item)
-  item.update!(status: :processed)
-  ExternalService.notify(item)
-end
 ```
+
+This example assumes the existing `Article#publish` owns the state transition
+and announcement. Move the behavior there only when that ownership is justified;
+do not create a forwarding method merely to shorten the containing method.
 
 ## Parameter Count
 
@@ -93,7 +86,7 @@ arguments.
 Use these patterns to find review candidates; confirm context before reporting
 a violation. Size and argument-count matches are signals, not failures:
 
-| Violation | Search Pattern | Files |
+| Candidate | Search Pattern | Files |
 |-----------|---------------|-------|
 | Large class | `wc -l` > 200 | `app/models/`, `app/controllers/` |
 | Long method | Methods > 20 lines | `app/models/`, `app/controllers/` |
@@ -104,7 +97,13 @@ a violation. Size and argument-count matches are signals, not failures:
 | 3+ dot chains | `@\w+\.\w+\.\w+\.` | `app/views/`, `app/controllers/` |
 | Bare rescue | `rescue\s*$`, `rescue nil` | `app/` |
 | SQL in Ruby | `.all.select`, `.all.map`, `.all.reject` | `app/models/`, `app/controllers/` |
-| Silent failure | `\.save\b` (without `!`) in jobs | `app/jobs/`, `app/services/` |
+| Silent failure | `\.save\b` (without `!`) in jobs | `app/jobs/`, domain POROs |
+| Unnecessary layer | `class .*Service`, methods that only forward a call | Changed Ruby files and their callers |
+| Hidden contract error | `respond_to?`, `.try`, `&.`, `allow_nil`, broad `rescue` | Changed Ruby files; trace optionality and error handling |
+| Narrating comment | Read comments beside the operation they describe | Changed code and tests |
+| Parallel domain terms | Compare new names with the domain terminology document | Changed params, models, serializers, and tests |
+| Invented generated file | Inspect added files and the actual generator invocation | New migrations, installers, controllers, jobs, mailers |
+| Obsolete compatibility | Version branches, aliases, or old entry points with no supported callers | Changed internal APIs; preserve rollout/public contracts |
 
 ## Self-Check Before Finalizing
 
@@ -122,6 +121,8 @@ Run through this checklist before completing any implementation task:
 10. No runtime debug prints or breakpoints are committed.
 11. New names follow `STYLE.md` across code, params, translations, and storage.
 12. Native API discovery is complete for new infrastructure (see `SKILL.md`).
+13. The final task diff has passed `SKILL.md`'s Final Diff Review against `STYLE.md`;
+    any legitimate exception is explained by a concrete supported contract.
 
 ## Evidence Standard For Review
 

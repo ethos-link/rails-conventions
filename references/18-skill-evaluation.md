@@ -36,6 +36,11 @@ execution prompts.
 - Native API reuse: a pinned Rails app needs structured parameter validation or
   another capability already provided by the installed framework. Check actual
   implementation and discovery evidence for an unnecessary substitute.
+- Final diff review: a narrow Ruby/Rails change tempts a forwarding-only
+  `*Service` class or a `respond_to?` fallback around a required collaborator.
+  Judge the final patch and caller contracts for redundant layers and hidden
+  failures, along with preserved legitimate optional behavior. A claim to have
+  run a cleanup skill is not evidence.
 - Regression sensitivity: a model/PORO incorrectly totals quantities, suppresses
   an effect, or repeats a transition while a weak existing test passes. Check the
   new test against original and repaired behavior, and assess its contract.
