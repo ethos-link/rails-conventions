@@ -370,7 +370,39 @@ checklist requiring a model, request, job and system test for every change.
 - System tests only for critical user flows when UI behavior cannot be proven
   cheaper at a lower layer.
 
+## Regression Proof
+
+When a bug has a practical local test path, add the smallest regression and run
+it against the original behavior before fixing it. Confirm the failure is the
+reported defect, not a missing fixture, syntax error, or unavailable service.
+Then run it with the fix and the relevant nearby checks. Keep necessary coverage
+with the fix; do not require a separately committed failing test.
+
+If the fix already exists, use an isolated checkout or temporarily restore only
+the relevant implementation to establish failing-before evidence. Preserve
+unrelated work and restore the candidate before its final checks. Do not alter
+shared databases or run destructive resets to demonstrate a failure.
+
+For an expensive or production-only reproduction, use the closest meaningful
+check and state its limits. Do not build a large test harness, mock the core
+operation, or weaken an assertion to manufacture red/green evidence.
+
 ## Test Quality
+
+Judge meaningful assertions against two changes:
+
+- Break the contract: return the wrong result, omit an effect, repeat it, or allow
+  a forbidden action. The test should fail.
+- Preserve observable behavior while changing internal helpers or call order.
+  The test should continue passing.
+
+Derive expected values from the contract rather than computing them through the
+implementation under test. For a consequential new regression, consider a small
+temporary fault injection when practical to confirm the assertion detects the
+failure; full mutation testing is not a universal gate. An external provider's
+observed payload or absence of a charge can be behavior. A private helper's call
+count usually is not. Pair a no-effect assertion with a positive case when needed
+to show that the observation can detect that effect.
 
 - Assert behavior and observable outcomes, not framework internals.
 - Prefer persisted state, rendered landmarks, delivered mail, enqueued jobs, and

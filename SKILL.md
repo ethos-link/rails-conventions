@@ -23,11 +23,20 @@ Follow this workflow and load only the references needed for the task.
 2. Match existing conventions unless the user requests a migration.
 3. Check existing app, Ruby, Rails, and installed gem APIs before adding custom
    code. Follow the native API discovery gate below.
-4. Prefer small, reversible changes with tests.
-5. Report tradeoffs explicitly when choosing architecture.
-6. Verify version-sensitive APIs against official Ruby, Rails, or gem docs before
+4. Define the observable result and cheapest adequate check before changing
+   behavior. For bugs, follow `references/17-debugging-and-verification.md`.
+5. Work in small, reversible units. Verify each coherent unit before building
+   on it; reuse existing generators and automation before writing a new tool.
+6. Report tradeoffs explicitly when choosing architecture.
+7. Verify version-sensitive APIs against official Ruby, Rails, or gem docs before
    changing guidance or introducing new APIs.
-7. Create generator-owned files only by running the generator — never invent them.
+8. Create generator-owned files only by running the generator — never invent them.
+
+Proceed with authorized, reversible work using facts discoverable from the repo
+and runtime. Ask for unresolved product decisions or required approval; keep
+independent work moving while those decisions are pending. Classify failed
+checks before changing code, and report unavailable or inconclusive evidence
+explicitly. Repository deployment and other approval boundaries remain binding.
 
 ## Runtime Baseline And Native API Discovery
 
@@ -184,11 +193,16 @@ Load references based on the task:
 - Inbound/outbound webhooks and delivery reliability: `references/14-webhooks.md`
 - Maintained documentation, Rake tasks, and one-off cleanup: `references/15-maintenance-and-documentation.md`
 - Mailer composition, delivery configuration, and previews: `references/16-mailers.md`
+- Bug diagnosis, repeated failed fixes, and verification boundaries: `references/17-debugging-and-verification.md`
+- Evaluating changes to this skill with realistic tasks: `references/18-skill-evaluation.md`
 
 ## Task Routing
 
 | Task | Load |
 |------|------|
+| Bug, regression, or repeated failed fix | `references/17-debugging-and-verification.md`, `references/10-testing-strategy.md` |
+| Broad rename, sweep, or refactor | `references/15-maintenance-and-documentation.md`, `references/10-testing-strategy.md` |
+| Changing this skill's behavioral guidance | `references/18-skill-evaluation.md` |
 | Runtime baseline, upgrades, native API discovery | `references/01-baseline-rails-8.md` |
 | Documentation, maintenance, Rake tasks, one-off repair | `references/15-maintenance-and-documentation.md` |
 | Mailers | `references/16-mailers.md`, `references/10-testing-strategy.md` |
@@ -229,6 +243,9 @@ For implementation tasks, produce:
 4. Brief risk notes (security, performance, rollout concerns).
 5. Native APIs reused, or the demonstrated gap requiring custom infrastructure;
    include version-matched source notes for version-sensitive choices.
+6. Checks actually run and the behavior each proves. For bug fixes, identify the
+   failing-before and passing-after evidence, or explain the reproduction gap.
+   Distinguish verified, failed, unavailable, and inconclusive outcomes.
 
 For review tasks, prioritize:
 
@@ -238,6 +255,8 @@ For review tasks, prioritize:
 4. Test gaps and correct ownership of coverage.
 5. Naming across changed languages and boundaries; native API reuse.
 
-Report concrete findings with locations and consequences. Assess reliability,
+Apply the evidence standard in `references/13-code-quality-gates.md`; reviewers'
+agreement is a signal, not proof. Report findings with locations, reachable
+execution paths, and consequences. Assess reliability,
 scalability, and operational failure paths where the change creates risk. Use
 explicit acceptance criteria rather than an undefined compliance percentage.

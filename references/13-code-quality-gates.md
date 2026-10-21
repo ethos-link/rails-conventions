@@ -123,6 +123,24 @@ Run through this checklist before completing any implementation task:
 11. New names follow `STYLE.md` across code, params, translations, and storage.
 12. Native API discovery is complete for new infrastructure (see `SKILL.md`).
 
+## Evidence Standard For Review
+
+For a correctness or security finding, show a reachable input or state, the
+relevant caller-to-failure path, and its observable consequence. Inspect callers,
+constraints, and installed library contracts beyond the diff before recommending
+new guards, retries, wrappers, or abstractions. If reachability cannot be
+established, label the concern as a hypothesis rather than a demonstrated bug.
+
+Separate required fixes from optional design suggestions and dismiss incorrect
+findings with a concrete reason. Agreement between reviewers or bots does not
+replace tracing the path; a single demonstrated security failure remains
+important. Do not churn working code solely because a reviewer prefers another
+shape. Evaluate maintainability findings against a concrete ownership, reader,
+or change-cost problem, not just a threshold or missing abstraction.
+
+For repeated agent mistakes, use the structural-correction guidance in
+`references/15-maintenance-and-documentation.md` before adding another rule.
+
 ## Local Verification
 
 Run the smallest existing checks that cover the change. Documentation-only

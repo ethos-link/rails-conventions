@@ -42,3 +42,21 @@ presentation requires objects.
   or job runtime.
 - Do not add caching to hide missing indexes, N+1 queries, or inefficient data
   ownership.
+
+Before acting on a speedup, read the measurement path and confirm the intended
+work happens inside the measured interval. Verify correct outputs and count
+failures, retries, and non-success responses; skipped work and fast rejections
+are not performance improvements.
+
+Compare representative data, Ruby/Rails versions, runtime configuration, worker
+and connection limits, and equivalent warm/cold cache conditions. Observe
+competing machine load. Profile separately from reported timing when profiling
+affects the measurement, and identify the bottleneck the proposed change targets.
+
+For a decision between alternatives, repeat and interleave before/after runs
+when practical. Report units, sample count, variability, conditions, and the
+relevant end-to-end effect. A quick single-run estimate may be useful when labeled
+as such; do not turn it into a reliable ranking or a production-capacity claim.
+If noise obscures the difference, a side did not perform equivalent work, or the
+observation cannot explain the claimed gain, report the comparison as inconclusive.
+Stop when the measured goal is met; do not add speculative optimization layers.
