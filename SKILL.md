@@ -36,7 +36,9 @@ introducing extra architectural layers. Avoid architecture borrowed from other
 ecosystems when Rails already has a direct convention for the problem.
 
 Official Rails guides, official gem documentation, and established local app
-conventions outrank style profiles. Use 37signals-inspired guidance as taste
+conventions outrank style profiles. Follow the repository's configured formatter
+and linter for layout; do not add suppression comments or change lint rules
+solely to satisfy this skill's style examples. Use 37signals-inspired guidance as taste
 guidance, not as authority over the current app or current Rails APIs.
 
 Classes and modules must earn their place. Choose the fewest concepts, files,

@@ -167,9 +167,10 @@ class Event::Description
   end
 
   private
-    def creator_name
-      event.creator.name
-    end
+
+  def creator_name
+    event.creator.name
+  end
 end
 ```
 

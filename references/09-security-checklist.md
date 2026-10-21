@@ -27,15 +27,16 @@ module RequestForgeryProtection
   extend ActiveSupport::Concern
 
   private
-    def verified_request?
-      super || safe_fetch_site?
-    end
 
-    def safe_fetch_site?
-      %w[same-origin same-site].include?(
-        request.headers["Sec-Fetch-Site"]&.downcase
-      )
-    end
+  def verified_request?
+    super || safe_fetch_site?
+  end
+
+  def safe_fetch_site?
+    %w[same-origin same-site].include?(
+      request.headers["Sec-Fetch-Site"]&.downcase
+    )
+  end
 end
 ```
 
@@ -114,9 +115,10 @@ module Authorization
   extend ActiveSupport::Concern
 
   private
-    def ensure_can_administer
-      head :forbidden unless Current.user.admin?
-    end
+
+  def ensure_can_administer
+    head :forbidden unless Current.user.admin?
+  end
 end
 
 # Model
