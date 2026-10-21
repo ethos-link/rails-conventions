@@ -79,7 +79,7 @@ Keep method names explicit. Hidden behavior in methods with generic names leads 
 
 ```ruby
 # Good
-def process_payment
+def purchase
   charge_card
   send_receipt
   update_inventory
@@ -132,9 +132,9 @@ Start simple. Extract only when pain emerges.
 
 ```
 1. Method on the model          → simple, local
-2. Concern (shared behavior)    → same pattern in 3+ models
+2. Concern (shared behavior)    → repeated capability or framework boundary
 3. PORO under model namespace   → complex operation, presentation, or view context
-4. Separate service class       → only when cross-domain orchestration is truly needed
+4. Domain-named orchestration   → only for a real cross-domain responsibility
 ```
 
 **Rule of three**: Duplicate a pattern twice before abstracting. The third duplication reveals the real boundary.
@@ -150,20 +150,24 @@ only forwards calls, renames another object, groups parameters without behavior,
 or exists to make a test easier, do not add it.
 
 Prefer model methods for local behavior. Prefer model-namespaced POROs for
-cohesive operations that do not fit one Active Record object. Use services only
-for true cross-domain orchestration with a stable public API.
+cohesive operations that do not fit one Active Record object. For true
+cross-domain orchestration, use a domain-named PORO with a stable public API;
+do not introduce a generic service layer or forwarding-only class.
 
 ### Concerns: When And How
 
 Extract a concern when:
 
-- The same behavior pattern appears across 3+ models or controllers.
+- The same behavior pattern appears across 3+ models or controllers, or the
+  concern owns an established framework capability such as request context.
 - The behavior is cohesive — related associations, scopes, and methods together.
 - The concern name describes a capability: `Closeable`, `Watchable`, `Assignable`.
 
 Do NOT extract a concern when:
 
-- Only 1–2 models share it (use a method or callback instead).
+- Only 1–2 models share it, unless an established Rails concern boundary or
+  cohesive existing app convention justifies it. Prefer local methods; do not
+  introduce callbacks merely to share business operations.
 - The concern would be a grab-bag of unrelated functionality.
 - The main goal is to reduce file size (split responsibilities instead).
 
@@ -242,7 +246,8 @@ Boards::PublicationsController     → /boards/:board_id/publication
 - Keep migrations additive and reversible where practical.
 - Do not reference application models in irreversible data migrations.
 - Backfill data in batches for large tables.
-- Add indexes for foreign keys, lookup columns, and common query patterns.
+- Add indexes required for data integrity. For performance indexes, require a
+  measured slow query and inspect its plan; see `references/08-performance-caching-and-db.md`.
 
 ## Law of Demeter
 
@@ -257,10 +262,14 @@ Avoid reaching deep into model associations. Chained dot access (`@var.associati
 # Good — delegate with prefix
 class Invoice < ApplicationRecord
   belongs_to :customer
-  delegate :street, :city, :zip, to: :address, prefix: true, allow_nil: true
+  delegate :address, to: :customer
+  delegate :street, :city, :zip, to: :address, prefix: true
   # Now: invoice.address_street
 end
 ```
+
+This example requires an address. Use `allow_nil: true` only when absence is
+part of the documented contract, not to conceal invalid persisted state.
 
 ### In Controllers
 

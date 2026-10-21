@@ -37,8 +37,8 @@ end
 
 ## Params Handling
 
-Use `params.expect` (Rails 7.1+) for required structured params. It returns
-`400 Bad Request` for missing or invalid required params:
+Use `params.expect` (introduced in Rails 8.0) for required structured params.
+It returns `400 Bad Request` for missing or invalid required params:
 
 ```ruby
 # Before

@@ -21,7 +21,7 @@
 
 ## Writes
 
-- Use `params.expect` for required structured params in Rails 8.1+.
+- Use `params.expect` for required structured params (introduced in Rails 8.0).
 - Make unsafe writes idempotent when clients can retry.
 - Use database constraints for invariants that must survive concurrent writes.
 - Wrap multi-record writes in transactions.

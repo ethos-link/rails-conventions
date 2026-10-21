@@ -28,10 +28,13 @@ It guides agents to:
 - catch risks early in security, performance, and test coverage
 - write value-based tests split by responsibility (deep unit coverage, thin request checks)
 - generate migrations and installer files instead of inventing them
+- reuse existing Ruby, Rails, and installed library APIs before writing helpers
+- diagnose bugs through testable hypotheses and verify regressions before/after
+- turn repeated mistakes into safeguards and measure equivalent work
 
 ## Coverage
 
-- Rails 8 baseline and compatibility constraints
+- Ruby 4.0+/Rails 8.1+ baseline, stable releases, and native API discovery
 - Naming, layering, and code organization
 - Active Record modeling, PostgreSQL features, and migration discipline
 - Controllers, params, and response semantics
@@ -43,6 +46,9 @@ It guides agents to:
 - Security checklist (including SSRF hardening and tenancy)
 - Testing strategy (value-based assertions, Minitest and Minitest::Mock)
 - API and serialization conventions
+- Evidence-driven debugging, review, and realistic skill evaluation
+- Mailer composition and previews
+- Maintenance tasks, one-off cleanup, and maintained documentation
 - Optional 37signals-inspired profile
 - Generator-owned files policy (migrations, installers — never invent them)
 
@@ -93,6 +99,9 @@ Generate a migration to add postponed_at to cards. Do not invent the timestamp f
 
 - Agent Skills spec: <https://agentskills.io>
 - Heavily inspired by: <https://github.com/marckohlbrugge/unofficial-37signals-coding-style-guide>
+- Debugging and verification workflow ideas adapted from
+  [Open Pstack](https://github.com/ericlitman/open-pstack/tree/74da651/plugins/pstack/skills),
+  with Rails ownership, scoped verification, and repository permissions preserved.
 
 ## License
 

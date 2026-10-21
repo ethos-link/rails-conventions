@@ -83,6 +83,7 @@ Net::HTTP.get(URI("https://api.example.com/data"))
 # Good — explicit timeouts
 uri = URI("https://api.example.com/data")
 http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = uri.scheme == "https"
 http.open_timeout = 5
 http.read_timeout = 5
 http.request(Net::HTTP::Get.new(uri))
@@ -114,15 +115,17 @@ HTTP_ERRORS = [
 
 def send_to_api(data)
   ApiClient.post("/webhook", data)
-rescue *HTTP_ERRORS => e
-  ErrorTracker.notify(e)
-  nil
+rescue *HTTP_ERRORS => error
+  ErrorTracker.notify(error)
+  raise
 end
 ```
 
 ### Background Non-Critical Calls
 
-Do not make synchronous API calls in request cycles. Background them:
+Background calls that do not determine the response. Keep a bounded synchronous
+call when the product contract requires its result; do not turn a required
+provider decision into fire-and-forget work:
 
 ```ruby
 # Bad — blocks request
@@ -160,9 +163,12 @@ end
 Keep retry windows bounded and visible in logs or error reporting. Do not retry
 validation failures or permanent provider rejections.
 
-### Permanent Failures — Swallow Gracefully
+### Permanent Failures — Handle Deliberately
 
-Do not fail the job for unrecoverable errors. Log at info level:
+Handle known permanent rejections according to the domain: persist a terminal
+failure or report and discard when no retry can help. Do not swallow unexpected
+exceptions or hide a failed business operation behind a successful job status.
+For example, a known invalid SMTP recipient can be reported without retrying:
 
 ```ruby
 module SmtpDeliveryErrorHandling

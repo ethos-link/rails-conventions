@@ -2,13 +2,16 @@
 
 ## Minitest Over RSpec
 
-Use Minitest. It ships with Rails, has simpler syntax, faster boot time, and
-plain Ruby assertions. Do not add RSpec, factory gems, or third-party mocking
-libraries unless the app already uses them.
+Use Minitest for new applications. Preserve an existing RSpec suite and its
+supported helpers; do not introduce a second framework or migrate test style
+as part of unrelated work. Do not add factory or mocking dependencies merely
+to follow an example in this skill.
 
 ## Fixtures Over Factories
 
-Use fixtures for deterministic, preloaded test data. Do not add factories.
+Prefer fixtures for new Minitest suites. Preserve established factory usage
+where the app already owns that convention; do not add a parallel data setup
+system or another dependency.
 
 ```yaml
 # test/fixtures/users.yml
@@ -230,7 +233,37 @@ end
 
 ### System Tests
 
-Use `data-test-id` selectors for stable, intention-revealing test targets.
+Use stable `data-test-id` attributes for application-owned system-test targets.
+Treat their values as testing contracts: name them by purpose, keep them
+independent of copy, locale, CSS classes, and layout, and make them unique
+within the queried scope. Repeated records may include their stable record ID;
+do not use array positions, random values, or translated strings.
+
+Configure Capybara's built-in selectors in the system-test base:
+
+```ruby
+Capybara.test_id = "data-test-id"
+```
+
+Then a button with `data-test-id="save"` can be addressed semantically:
+
+```ruby
+click_button "save"
+```
+
+Use semantic controls and preserve labels, roles, and accessible names. When
+those properties are part of the behavior under test, assert them explicitly
+or locate by them. Test IDs do not prove accessibility or replace assertions on
+visible customer outcomes. Do not add a selector attribute to every node.
+
+Pair stable selectors with Capybara's waiting finders and assertions. Wait for
+the resulting UI state after Turbo or asynchronous work, not merely the
+presence of a pre-existing container. Use `assert_no_selector` for disappearance;
+do not negate a positive query. Avoid positional selectors and `.first` to hide
+ambiguous matches, sleeps, global timeout increases, or retries that mask races.
+See [Capybara configuration](https://github.com/teamcapybara/capybara/blob/master/lib/capybara.rb)
+and [synchronization](https://github.com/teamcapybara/capybara#asynchronous-javascript-ajax-and-friends).
+
 Assert the journey outcome, not every visible node.
 
 ```ruby
@@ -301,7 +334,8 @@ end
 
 - WebMock must remain enabled in tests; do not allow live HTTP.
 - Outbound API calls use VCR cassettes in `test/support/cassettes/`.
-- Cassette naming: `{platform}_{resource}[optional_suffix].yml`.
+- Follow the existing cassette naming convention. For new suites, use
+  `{platform}/{resource}[optional_suffix].yml`.
 - Inbound webhooks use JSON captures in `test/support/webhook_captured/` (do not use VCR).
 
 For webhook delivery architecture, load `references/14-webhooks.md`.
@@ -320,7 +354,9 @@ end
 
 ## When Tests Ship
 
-Tests ship with features in the same commit — not beforehand, not afterward. Security fixes always include regression tests.
+Ship necessary regression coverage with the changed behavior. Reversible copy
+or low-impact presentation edits do not require tests that merely mirror their
+implementation. Security fixes always include regression tests.
 
 ## Minimum Coverage For Feature Work
 
@@ -334,7 +370,39 @@ checklist requiring a model, request, job and system test for every change.
 - System tests only for critical user flows when UI behavior cannot be proven
   cheaper at a lower layer.
 
+## Regression Proof
+
+When a bug has a practical local test path, add the smallest regression and run
+it against the original behavior before fixing it. Confirm the failure is the
+reported defect, not a missing fixture, syntax error, or unavailable service.
+Then run it with the fix and the relevant nearby checks. Keep necessary coverage
+with the fix; do not require a separately committed failing test.
+
+If the fix already exists, use an isolated checkout or temporarily restore only
+the relevant implementation to establish failing-before evidence. Preserve
+unrelated work and restore the candidate before its final checks. Do not alter
+shared databases or run destructive resets to demonstrate a failure.
+
+For an expensive or production-only reproduction, use the closest meaningful
+check and state its limits. Do not build a large test harness, mock the core
+operation, or weaken an assertion to manufacture red/green evidence.
+
 ## Test Quality
+
+Judge meaningful assertions against two changes:
+
+- Break the contract: return the wrong result, omit an effect, repeat it, or allow
+  a forbidden action. The test should fail.
+- Preserve observable behavior while changing internal helpers or call order.
+  The test should continue passing.
+
+Derive expected values from the contract rather than computing them through the
+implementation under test. For a consequential new regression, consider a small
+temporary fault injection when practical to confirm the assertion detects the
+failure; full mutation testing is not a universal gate. An external provider's
+observed payload or absence of a charge can be behavior. A private helper's call
+count usually is not. Pair a no-effect assertion with a positive case when needed
+to show that the observation can detect that effect.
 
 - Assert behavior and observable outcomes, not framework internals.
 - Prefer persisted state, rendered landmarks, delivered mail, enqueued jobs, and
@@ -342,6 +410,9 @@ checklist requiring a model, request, job and system test for every change.
   plumbing.
 - Split assertions by responsibility: deep logic in unit tests; thin HTTP
   contracts in request tests.
+- For catalogs, routes, sitemaps, and navigation, assert representative examples
+  and important exclusions or invariants; do not copy the complete configured
+  value list into a test.
 - Keep fixtures small (~10 records per type) for speed and determinism.
 - Do not test private methods directly. If private behavior is hard to reach
   through public behavior, simplify the production design.

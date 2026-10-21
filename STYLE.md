@@ -137,6 +137,12 @@ Prefer one-word precise names. Qualify only when a bare word is ambiguous
 (`contact_phone`, `place_eid`). One canonical term per concept; do not add
 parallel names for the same thing.
 
+Review new names across Ruby, JavaScript/Stimulus, component partials, params,
+i18n keys, and persisted fields. Namespaces and conventional suffixes (`Job`,
+`Controller`, `_at`, `_id`, `_eid`) do not excuse redundant descriptive words.
+Necessary ownership qualifiers and framework-defined APIs remain valid; do not
+rename public contracts or existing domain terminology for style alone.
+
 Names should be concrete domain nouns or intention-revealing verbs. Public APIs
 should say what the caller is asking the object to do, not how the object is
 implemented.
@@ -207,24 +213,105 @@ Keep architecture rules in the topic references:
 - When a call chain is incorrect, update the call chain and underlying data contracts; do not add indirection layers.
 - Do not branch on both symbol and string keys for the same hash. Normalize keys once at the boundary.
 
+## Generated Code Review
+
+Apply these criteria to the actual application diff as required by `SKILL.md`.
+They apply to all changed code, whether generated, hand-written, or delegated.
+Inspect behavior and contracts before deleting a suspected smell; syntax alone
+cannot distinguish a fallback from a supported capability check.
+
+### Forwarding Layers And Parallel Names
+
+Prefer the existing owner over a class that only renames its operation:
+
+```ruby
+# Bad: a new name and file with no policy or adaptation.
+class PublicationService
+  def self.call(article)
+    article.publish
+  end
+end
+
+# Good: the domain owner already exposes the requested operation.
+article.publish
+```
+
+A domain-named PORO may own real cross-domain orchestration. Its responsibility,
+not the word chosen for the class, must justify its existence. Follow the
+structure reference rather than introducing a universal service layer. Use one
+canonical term through params, models, tests, and serializers; do not alternate
+synonyms for the same concept within a change. Preserve established external
+contracts when a coordinated rename is outside scope.
+
+### Defensive Fallbacks
+
+Do not hide a missing required collaborator or method behind a successful no-op:
+
+```ruby
+# Bad: callers require publication, but an invalid object silently succeeds.
+begin
+  article.publish if article.respond_to?(:publish)
+rescue StandardError
+  nil
+end
+
+# Good: a broken contract remains visible to the caller.
+article.publish
+```
+
+Review `try`, safe navigation, `allow_nil`, dynamic dispatch, and rescue paths
+against the actual contract. Known optional associations and capability-based
+external interfaces can legitimately need checks; do not remove those checks
+merely to satisfy a pattern search. Rescue named expected errors with deliberate
+handling. Validate untrusted data at its boundary and enforce persisted
+invariants at their owner; do not treat dynamic Ruby as a static type proof.
+
+### Comments And Generator Provenance
+
+```ruby
+# Bad: repeats the operation's name.
+# Save the article.
+article.save!
+
+# Good: records a concurrency invariant the call alone cannot explain.
+# The unique index arbitrates concurrent delivery creation.
+delivery = event.deliveries.create_or_find_by!(webhook: webhook)
+```
+
+Keep legal notices, required directives, strict-locals declarations, public
+contracts, security assumptions, migration/backfill preconditions, and useful
+non-obvious reasons. Do not replace them with a blanket no-comments rule.
+
+Inspect newly added migration, installer, controller, job, and mailer files
+against the generator that owns them. Require an actual generator invocation
+and inspect its output; a plausible filename or timestamp is not provenance.
+If the generator cannot run, report the missing capability under `SKILL.md`'s
+generator policy rather than fabricating its output.
+
+Review new compatibility branches and old internal entry points for supported
+callers. Delete obsolete paths in a coordinated internal migration; retain
+compatibility required by public contracts, staged database rollouts, or the
+project's supported version range. Do not add fallback branches for an imagined
+older runtime. Review changed tests against the behavior criteria in
+`references/10-testing-strategy.md`, including whether they exercise the actual
+operation and observe consequential outcomes.
+
 ### Bang Methods In Jobs And Orchestration Code
 
 In jobs and POROs, use bang methods (`save!`, `update!`, `create!`) so failures raise immediately. Silent failures in background jobs are invisible until data is corrupt.
 
 ```ruby
 # Bad — silent failure in job
-class ProcessOrderJob < ApplicationJob
+class Order::SubmissionJob < ApplicationJob
   def perform(order)
-    order.process
-    order.save  # returns false silently
+    order.update(submitted_at: Time.current) # Validation failure is ignored.
   end
 end
 
 # Good — raises on failure
-class ProcessOrderJob < ApplicationJob
+class Order::SubmissionJob < ApplicationJob
   def perform(order)
-    order.process!
-    order.save!
+    order.update!(submitted_at: Time.current)
   end
 end
 ```

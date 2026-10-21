@@ -17,12 +17,16 @@ PostgreSQL-specific data modeling, indexes, constraints, or queries.
 
 ## Indexes
 
-- Add indexes for foreign keys, lookup columns, unique business keys, and common
-  ordering/filtering paths.
+- Add unique indexes required for data integrity without a slow-query prerequisite.
+- Require a measured slow query and inspect its plan before adding performance
+  indexes, including non-unique foreign-key, lookup, ordering, and filter indexes.
+  PostgreSQL foreign keys do not automatically require an index on referencing
+  columns. See `references/08-performance-caching-and-db.md`.
 - Use partial indexes for scoped uniqueness or hot subsets.
 - Use expression indexes only when the expression is stable and the query path
   is important.
-- Use GIN indexes for queried `jsonb` or array fields.
+- Consider GIN for measured `jsonb` or array query bottlenecks when the
+  operators and plan support that choice.
 - Use included columns when they remove real index-only query pressure.
 - Check query plans for high-volume paths before and after index changes.
 

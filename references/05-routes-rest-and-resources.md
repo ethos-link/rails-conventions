@@ -116,7 +116,9 @@ app/controllers/
 
 ## Same Controller, Different Format
 
-No separate API namespace. Use `respond_to`:
+For a shared HTML/JSON resource with the same authorization and lifecycle, use
+`respond_to`. Preserve established API namespaces and use separate controllers
+when authentication, versioning, or the external contract requires them:
 
 ```ruby
 class Cards::ClosuresController < ApplicationController

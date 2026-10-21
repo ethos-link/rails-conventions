@@ -80,7 +80,7 @@ When state matters, create a separate record instead of a boolean column. This p
 # Bad — boolean column
 class Card < ApplicationRecord
   scope :closed, -> { where(closed: true) }
-  scope :open, -> { where(closed: false) )
+  scope :open, -> { where(closed: false) }
 end
 
 # Good — separate record
@@ -237,7 +237,8 @@ or version numbers by hand. Run `bin/rails generate migration ...` (or the
 model/scaffold generator), then edit the generated file. See Generator-Owned
 Files in `SKILL.md`.
 
-- Add indexes for foreign keys, lookup columns, and common query patterns.
+- Add indexes required for data integrity. For performance indexes, require a
+  measured slow query and inspect its plan; see `references/08-performance-caching-and-db.md`.
 - Use foreign keys for referential integrity unless the app has a documented
   reason not to.
 - Add database constraints for critical invariants. Model validations improve
@@ -278,11 +279,14 @@ new directory.
 
 ### Never Reference Application Models
 
-Migrations must not depend on application model code. If a model changes after the migration runs, the migration will break on future runs.
+Migrations must not depend on application model code. If a model changes after
+the migration runs, the migration will break on future runs. These examples use
+the Rails 8.1 baseline; actual files retain their generator-selected migration
+version. Do not rewrite historical migration versions during unrelated work.
 
 ```ruby
 # Bad — depends on User model; breaks if User changes
-class AddJobsCountToUser < ActiveRecord::Migration[7.1]
+class AddJobsCountToUser < ActiveRecord::Migration[8.1]
   def up
     add_column :users, :jobs_count, :integer, default: 0
     User.all.each { |u| u.update!(jobs_count: u.jobs.size) }
@@ -290,7 +294,7 @@ class AddJobsCountToUser < ActiveRecord::Migration[7.1]
 end
 
 # Good — pure SQL, no external dependencies
-class AddJobsCountToUser < ActiveRecord::Migration[7.1]
+class AddJobsCountToUser < ActiveRecord::Migration[8.1]
   def up
     add_column :users, :jobs_count, :integer, default: 0
     execute <<-SQL
@@ -305,8 +309,8 @@ end
 If a model class is needed for data migrations, define an inline class within the migration:
 
 ```ruby
-class BackfillData < ActiveRecord::Migration[7.1]
-  class User < ApplicationRecord
+class BackfillData < ActiveRecord::Migration[8.1]
+  class User < ActiveRecord::Base
     self.table_name = "users"
   end
 
