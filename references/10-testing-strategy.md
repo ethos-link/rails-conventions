@@ -132,6 +132,40 @@ class CardTest < ActiveSupport::TestCase
 end
 ```
 
+## Library Ownership And Browser Cost
+
+Test each guarantee in the repository that owns its implementation. Shared UI
+primitives and generic interactions belong in the design-system library; shared
+billing algorithms, accounting invariants and provider reconciliation belong in
+the billing library. Consumer applications own configuration, authorization,
+tenant binding, product policies and integration with those libraries. Moving a
+library matrix from browser tests to consumer unit tests still duplicates its
+owner's coverage.
+
+Keep a few critical host browser workflows through real installed libraries,
+such as selecting and subscribing to a plan. Control external provider calls;
+do not stub the library operation or mutate payment state to bypass the path
+being proved. Keep a host regression when composition, asset loading or Turbo
+lifecycle creates a specific integration risk. Before deleting duplicate host
+coverage, verify the consumed library release proves the contract. Move missing
+reusable implementation and its generic tests upstream together; keep product
+adapters local and remove them only after adopting the released replacement.
+
+Use one browser worker by default. Increase concurrency only after measuring
+CPU, memory, disk use and failure rates under an explicit resource budget. Do
+not derive browser concurrency from the machine's processor count. Avoid routine
+successful screenshots in functional tests; keep expanded viewport/theme
+matrices in explicit visual review tooling. Compare drivers on the same passing
+workload and resource limits before selecting one; do not keep two permanent
+system suites for an experiment.
+
+When coverage is enabled, use the installed SimpleCov Rails profile and native
+worker merging. Prefer Rails `test:all` for one normal-and-system test run; keep
+test class names distinct across layers. Preserve the existing report formatter.
+Honor an application's always-on coverage requirement; do not add an opt-in
+`COVERAGE` flag or another coverage-only test pass. Do not claim a focused run
+is full coverage. Ruby coverage does not measure browser JavaScript.
+
 ## Test Structure
 
 ### Unit Tests (Models)
@@ -225,7 +259,7 @@ end
 class ActiveSupport::TestCase
   include SignInHelper
 
-  parallelize(workers: :number_of_processors)
+  parallelize(workers: Integer(ENV.fetch("PARALLEL_WORKERS", "1")))
   fixtures :all
 end
 ```
@@ -290,6 +324,9 @@ Tests ship with features in the same commit — not beforehand, not afterward. S
 
 ## Minimum Coverage For Feature Work
 
+Select only the layers needed to prove the changed behavior. This is not a
+checklist requiring a model, request, job and system test for every change.
+
 - Model/business behavior tests with thorough coverage of the logic.
 - Request/controller tests for happy and sad HTTP paths — status, authz, and a
   few side effects — not full-page content inventories.
@@ -338,7 +375,8 @@ domain collaborators just to avoid designing a clearer public API.
 
 Do not `assert_select` every paragraph, badge, and partial. Pick a landmark and
 side effects. Exhaustive rendering checks belong in focused view/component tests
-only when the app already uses that layer, or in a rare system test.
+only when that contract needs direct rendering coverage. Do not promote a
+markup inventory to a browser test.
 
 ### No Logic Coverage Gaps Filled By Request Tests
 
@@ -347,7 +385,9 @@ test that posts once does not replace unit coverage.
 
 ### No `sleep` In Tests
 
-Do not use `sleep` to wait for async behavior. Use `travel_to` for time-dependent tests or event-based waits:
+Use Capybara's waiting assertions for browser readiness. `travel_to` changes
+Ruby time; it does not advance JavaScript timers, finish fetches or wait for
+Turbo. Use it only when the behavior under test depends on server time:
 
 ```ruby
 # Bad
@@ -355,9 +395,7 @@ sleep 2
 assert page.has_content?("Done")
 
 # Good
-travel_to 2.seconds.from_now do
-  assert page.has_content?("Done")
-end
+assert_text "Done", wait: 5
 ```
 
 ### No Tests Coupled To HTML Structure

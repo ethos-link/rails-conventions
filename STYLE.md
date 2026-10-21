@@ -58,18 +58,19 @@ class SomeClass
   end
 
   private
-    def method_1
-      method_1_1
-      method_1_2
-    end
 
-    def method_1_1
-      # ...
-    end
+  def method_1
+    method_1_1
+    method_1_2
+  end
 
-    def method_2
-      # ...
-    end
+  def method_1_1
+    # ...
+  end
+
+  def method_2
+    # ...
+  end
 end
 ```
 
@@ -90,7 +91,13 @@ end
 
 ## Visibility Modifiers
 
-Do not add a blank line under visibility modifiers. Indent content under them.
+Follow the repository's configured formatter for `private`, `protected` and
+`public` sections. With Standard or the usual RuboCop layout, put a blank line
+after the visibility modifier and align the methods with public methods.
+Visibility modifiers do not introduce an indentation level.
+
+Do not add `rubocop:disable` directives, formatter exceptions or explanatory
+comments to preserve a conflicting skill layout. Fix the formatting instead.
 
 ```ruby
 class SomeClass
@@ -99,17 +106,18 @@ class SomeClass
   end
 
   private
-    def some_private_method_1
-      # ...
-    end
 
-    def some_private_method_2
-      # ...
-    end
+  def some_private_method_1
+    # ...
+  end
+
+  def some_private_method_2
+    # ...
+  end
 end
 ```
 
-For modules with only private methods, mark `private` at the top with an extra blank line after, but do not indent:
+Use the same layout for modules containing only private methods:
 
 ```ruby
 module SomeModule

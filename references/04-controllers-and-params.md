@@ -62,9 +62,10 @@ class CardsController < ApplicationController
   before_action :ensure_permission_to_administer_card, only: [:destroy]
 
   private
-    def ensure_permission_to_administer_card
-      head :forbidden unless Current.user.can_administer_card?(@card)
-    end
+
+  def ensure_permission_to_administer_card
+    head :forbidden unless Current.user.can_administer_card?(@card)
+  end
 end
 
 # Model
@@ -95,22 +96,23 @@ module CardScoped
   end
 
   private
-    def set_card
-      @card = Current.user.accessible_cards.find_by!(number: params[:card_id])
-    end
 
-    def set_board
-      @board = @card.board
-    end
+  def set_card
+    @card = Current.user.accessible_cards.find_by!(number: params[:card_id])
+  end
 
-    def render_card_replacement
-      render turbo_stream: turbo_stream.replace(
-        [@card, :card_container],
-        partial: "cards/container",
-        method: :morph,
-        locals: { card: @card.reload }
-      )
-    end
+  def set_board
+    @board = @card.board
+  end
+
+  def render_card_replacement
+    render turbo_stream: turbo_stream.replace(
+      [@card, :card_container],
+      partial: "cards/container",
+      method: :morph,
+      locals: { card: @card.reload }
+    )
+  end
 end
 
 # Usage
@@ -156,11 +158,12 @@ module TurboFlash
   end
 
   private
-    def turbo_stream_flash(**flash_options)
-      turbo_stream.replace(:flash,
-        partial: "layouts/shared/flash",
-        locals: { flash: flash_options })
-    end
+
+  def turbo_stream_flash(**flash_options)
+    turbo_stream.replace(:flash,
+      partial: "layouts/shared/flash",
+      locals: { flash: flash_options })
+  end
 end
 ```
 

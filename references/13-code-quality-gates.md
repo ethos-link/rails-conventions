@@ -41,14 +41,15 @@ def process
 end
 
 private
-  def active_items
-    items.select(&:active?)
-  end
 
-  def process_item(item)
-    item.update!(status: :processed)
-    ExternalService.notify(item)
-  end
+def active_items
+  items.select(&:active?)
+end
+
+def process_item(item)
+  item.update!(status: :processed)
+  ExternalService.notify(item)
+end
 ```
 
 ## Parameter Count
