@@ -261,6 +261,15 @@ When implementing custom auth:
   `User` (per-account membership), and `Session`.
 - Rate limit authentication endpoints aggressively.
 - Store sessions via signed cookies with `httponly` and `same_site: :lax`.
+- In development, keep the real random, expiring, single-use code flow. Follow
+  the local mail delivery setup in `references/16-mailers.md`; do not introduce
+  fixed codes, authentication bypasses, or code logging to make sign-in easier.
+
+## Mailers
+
+Every outgoing email action requires a working Action Mailer preview, including
+existing actions found during an email audit. Read `references/16-mailers.md`
+for mailer work, preview coverage and local development delivery.
 
 ## Output Contract
 
